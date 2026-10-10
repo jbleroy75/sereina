@@ -9,6 +9,16 @@
   var busy=false,ctl=null,me=null,consent=false,pending=null;
   var CRISIS=/suicid|me tuer|en finir|plus envie de vivre|me faire du mal|mourir|disparaître|scarif/i;
   try{consent=localStorage.getItem("sereina-consent")==="1";}catch(e){}
+  // Empreinte technique de l'appareil, hachée (SHA-256) : sert uniquement à limiter l'essai gratuit à un par appareil.
+  var FP="";
+  (function(){try{
+    var parts=[navigator.userAgent,navigator.language,(navigator.languages||[]).join(","),screen.width+"x"+screen.height+"x"+screen.colorDepth,window.devicePixelRatio,navigator.hardwareConcurrency,navigator.deviceMemory,navigator.platform,navigator.maxTouchPoints];
+    try{parts.push(Intl.DateTimeFormat().resolvedOptions().timeZone);}catch(e){}
+    try{var c=document.createElement("canvas");c.width=220;c.height=40;var x=c.getContext("2d");x.textBaseline="top";x.font="16px Arial";x.fillStyle="#2f4a64";x.fillRect(2,2,60,20);x.fillStyle="#e3a";x.fillText("Sereina ✓ 3114",4,6);parts.push(c.toDataURL());}catch(e){}
+    try{var g=document.createElement("canvas").getContext("webgl");var d=g&&g.getExtension("WEBGL_debug_renderer_info");if(d)parts.push(g.getParameter(d.UNMASKED_VENDOR_WEBGL),g.getParameter(d.UNMASKED_RENDERER_WEBGL));}catch(e){}
+    if(window.crypto&&crypto.subtle&&window.TextEncoder)crypto.subtle.digest("SHA-256",new TextEncoder().encode(parts.join("|"))).then(function(b){FP=Array.prototype.map.call(new Uint8Array(b),function(v){return("0"+v.toString(16)).slice(-2)}).join("");}).catch(function(){});
+  }catch(e){}})();
+  function hdrs(h){h=h||{};if(FP)h["X-Client-Fp"]=FP;return h;}
 
   function add(cls,who,text){var d=document.createElement("div");d.className="turn "+cls;if(who){var b=document.createElement("b");b.textContent=who;d.appendChild(b);}d.appendChild(document.createTextNode(text));log.appendChild(d);log.scrollTop=log.scrollHeight;return d;}
   function setText(el,t){el.lastChild.nodeValue=t;log.scrollTop=log.scrollHeight;}
@@ -21,7 +31,8 @@
     if(me.free_exhausted){quota.textContent=me.credits>0?(me.credits+(me.credits>1?" crédits":" crédit")+(me.auto_recharge?" · recharge auto":"")):"Plus de crédits";return;}
     quota.textContent=me.free_started?"Essai gratuit en cours":"Essai gratuit : "+me.free_minutes+" min";
   }
-  function loadMe(){return fetch("/api/me",{credentials:"same-origin"}).then(function(r){return r.json()}).then(function(m){me=m;showQuota();if(m.consent)consent=true;}).catch(function(){});}
+  function loadMe(){return fetch("/api/me",{credentials:"same-origin"}).then(function(r){return r.json()}).then(function(m){me=m;showQuota();payInfo();if(m.consent)consent=true;}).catch(function(){});}
+  function payInfo(){var t=$("#payTrial"),l=$("#payLogin");if(t)t.hidden=!(me&&me.trial_denied);if(l)l.hidden=!!(me&&me.email);}
 
   // Fenêtres
   var consentModal=$("#consentModal"),payModal=$("#payModal");
@@ -29,7 +40,7 @@
   $("#ck18").addEventListener("change",updateConsentBtn);$("#ckData").addEventListener("change",updateConsentBtn);
   $("#consentOk").addEventListener("click",function(){
     consent=true;try{localStorage.setItem("sereina-consent","1");}catch(e){}
-    fetch("/api/consent",{method:"POST",credentials:"same-origin"}).catch(function(){});
+    fetch("/api/consent",{method:"POST",headers:hdrs(),credentials:"same-origin"}).catch(function(){});
     consentModal.hidden=true;if(pending){var t=pending;pending=null;send(t);}else input.focus();
   });
   $("#payLater").addEventListener("click",function(){payModal.hidden=true;});
@@ -55,8 +66,8 @@
     var el=add("thinking",GUIDES[guide][0],"Réfléchit…");
     setBusy(true);ctl=new AbortController();
     try{
-      var r=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},credentials:"same-origin",signal:ctl.signal,body:JSON.stringify({guide:guide,message:text})});
-      if(r.status===402){el.remove();if(me)me.paywalled=true;showQuota();payModal.hidden=false;return;}
+      var r=await fetch("/api/chat",{method:"POST",headers:hdrs({"Content-Type":"application/json"}),credentials:"same-origin",signal:ctl.signal,body:JSON.stringify({guide:guide,message:text})});
+      if(r.status===402){el.remove();var j={};try{j=await r.json();}catch(e){}if(me){me.paywalled=true;if(j.trial_denied)me.trial_denied=true;}showQuota();payInfo();payModal.hidden=false;return;}
       if(r.status===403){el.remove();consent=false;try{localStorage.removeItem("sereina-consent");}catch(e){}pending=text;consentModal.hidden=false;return;}
       if(r.status===429){el.remove();add("sys","","Trop de messages d'un coup. Attendez un instant, puis réessayez.");return;}
       if(!r.ok||!r.body){el.remove();add("sys","","Le service ne répond pas pour le moment. Réessayez dans quelques instants. En cas d'urgence : 15 ou 3114.");return;}
@@ -68,7 +79,7 @@
           var line=lines[i];if(line.indexOf("data: ")!==0)continue;var ev;try{ev=JSON.parse(line.slice(6));}catch(e){continue}
           if(ev.delta){if(!full){el.classList.remove("thinking");}full+=ev.delta;setText(el,full);}
           if(ev.error)add("sys","",ev.error);
-          if(ev.done&&me){if(typeof ev.credits==="number")me.credits=ev.credits;if(!ev.free){me.free_exhausted=true;}me.paywalled=me.free_exhausted&&me.credits<=0;showQuota();if(me.free_exhausted&&me.credits===0&&!me.auto_recharge)add("sys","","C'était votre dernier crédit. Vous pourrez en racheter au prochain message.");}
+          if(ev.done&&me){if(ev.trial_denied){me.trial_denied=true;me.free_exhausted=true;}if(ev.safety)add("sys","","Votre message a bien été lu, même sans crédit. Un membre de notre équipe peut vous proposer de l'aide. En cas de danger immédiat : 15 ou 3114.");if(typeof ev.credits==="number")me.credits=ev.credits;if(!ev.free){me.free_exhausted=true;}me.paywalled=me.free_exhausted&&me.credits<=0;showQuota();if(me.free_exhausted&&me.credits===0&&!me.auto_recharge)add("sys","","C'était votre dernier crédit. Vous pourrez en racheter au prochain message.");}
           if(ev.risk==="rouge")crisis();
         }
       }

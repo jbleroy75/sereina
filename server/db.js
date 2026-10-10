@@ -122,9 +122,12 @@ CREATE TABLE IF NOT EXISTS events (
 `);
 
 // Migration douce pour les bases créées avant l'ajout de consent_at
-for (const col of ["consent_at TEXT", "credits INTEGER DEFAULT 0", "auto_recharge INTEGER DEFAULT 0", "auto_pack TEXT", "stripe_payment_method TEXT"]) {
+for (const col of ["consent_at TEXT", "credits INTEGER DEFAULT 0", "auto_recharge INTEGER DEFAULT 0", "auto_pack TEXT", "stripe_payment_method TEXT",
+  "email_verified_at TEXT", "email_hash TEXT", "marketing_optin INTEGER DEFAULT 0", "marketing_optin_at TEXT",
+  "trial_denied INTEGER DEFAULT 0", "fp_hash TEXT"]) {
   try { db.exec(`ALTER TABLE users ADD COLUMN ${col}`); } catch {}
 }
+db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_hash ON users(email_hash) WHERE email_hash IS NOT NULL");
 
 export const now = () => new Date().toISOString();
 

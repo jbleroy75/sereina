@@ -7,7 +7,9 @@ Tout est prêt à déployer sur un serveur (Linux, Node 20+). Aucune base de don
 - `content/` : les 100 articles conseils en Markdown (8 thèmes), modifiables à la main.
 - `topics.json` : la liste des sujets, thèmes et accompagnants.
 - `build.py` : génère le site statique dans `dist/` (`python3 build.py --site-url https://www.votre-domaine.fr`).
-- `dist/` : le site généré (112 URL, sitemap.xml, robots.txt). C'est ce que le serveur sert.
+- `dist/` : le site généré (127 URL indexables, sitemap.xml, robots.txt, manifeste et service worker de l'application). C'est ce que le serveur sert.
+- `guides/` : les 5 guides à télécharger en Markdown ; `build_guides.py` en fait des PDF dans `private/guides/` (jamais servis directement, seulement par lien signé).
+- `indexnow.py` : signale les pages nouvelles ou modifiées à Bing et aux autres moteurs IndexNow.
 - `server/` : le serveur Node (chat IA, paywall Stripe, score de risque, back-office).
 - `BRIEF.md` : la charte de rédaction, à réutiliser pour les prochains articles.
 
@@ -15,8 +17,9 @@ Tout est prêt à déployer sur un serveur (Linux, Node 20+). Aucune base de don
 
 ```bash
 # 1. Générer le site avec votre domaine (nécessaire pour les URL canoniques et le sitemap)
-pip install markdown pyyaml
+pip install markdown pyyaml reportlab pillow
 python3 build.py --site-url https://www.votre-domaine.fr
+python3 build_guides.py          # les 5 guides PDF
 
 # 2. Serveur
 cd server
@@ -33,11 +36,11 @@ www.votre-domaine.fr {
 }
 ```
 
-Pour tester sans clé ni carte : `MOCK_AI=1 npm start` (réponses simulées, classification par mots-clés).
+Pour tester sans clé ni carte : `MOCK_AI=1 MAIL_DEV_LOG=1 npm start` (réponses simulées, classification par mots-clés ; les e-mails sont affichés dans la console et enregistrés en base au lieu d'être envoyés).
 
 ## Ce que fait le serveur
 
-**Chat** (`POST /api/chat`) : exige le consentement (`POST /api/consent`), identifie le visiteur par un cookie signé (pas de compte à créer), garde l'historique par accompagnant, répond en flux (SSE) avec Claude. Chaque accompagnant a ses consignes dans `server/ai.js` (`GUIDES`, `COMMON`).
+**Chat** (`POST /api/chat`) : exige le consentement (`POST /api/consent`), identifie le visiteur par un cookie signé (pas de compte à créer ; l'e-mail est facultatif, voir plus bas), garde l'historique par accompagnant, répond en flux (SSE) avec Claude. Chaque accompagnant a ses consignes dans `server/ai.js` (`GUIDES`, `COMMON`).
 
 **Crédits** : les premiers échanges sont gratuits (`FREE_MINUTES` ou `FREE_MESSAGES`, le premier seuil atteint). Ensuite, 1 crédit = 1 message envoyé. Trois packs définis dans `PACKS` (clé:crédits:centimes:libellé), achetés en paiement unique par Stripe Checkout, carte enregistrée. À l'achat, la recharge automatique est cochée par défaut : quand les crédits tombent à zéro, le serveur rachète le même pack hors session avec la carte enregistrée (`autoRecharge` dans `server.js`) et la conversation continue sans interruption ; si le paiement échoue (carte expirée, authentification requise), l'option est désactivée et la fenêtre d'achat réapparaît. L'utilisateur active ou désactive la recharge dans « Mon compte ». Le webhook Stripe (`checkout.session.completed`, et `payment_intent.succeeded` en filet de sécurité) crédite le compte. Le back-office permet d'offrir des crédits.
 
@@ -55,6 +58,27 @@ Dans Stripe : aucune configuration de produit n'est nécessaire (les packs sont 
 Le niveau d'un utilisateur ne redescend pas tout seul tant qu'une alerte n'a pas été marquée « prise en charge » par un humain.
 
 **Back-office** (`/admin/`) : liste des utilisateurs triée par risque non traité (rouge, orange, jaune) puis activité, compteurs, page « Alertes ouvertes », fiche par utilisateur avec la conversation complète, le niveau de chaque message, les coordonnées connues, les achats, un bouton pour offrir des crédits et le formulaire « Marquer comme pris en charge ». Rafraîchissement automatique toutes les 30 secondes.
+
+## Compte, essai gratuit, e-mails, guides, application
+
+**Compte par code e-mail** (`/mon-compte/`) : facultatif. La personne saisit son adresse, reçoit un code à 6 chiffres (valable 10 min, 5 essais, 3 envois par quart d'heure, stocké haché), et son espace est rattaché à l'adresse. Sur un nouvel appareil, le même code lui rend ses crédits et conversations ; ce que l'appareil contenait déjà est fusionné dans le compte. Pas de mot de passe. Les adresses jetables sont refusées (`server/security/disposable-domains.json`). Le paywall propose « Connectez-vous avec votre e-mail » pour retrouver ses crédits.
+
+**Anti-abus de l'essai gratuit** (`server/antiabuse.js`) : au premier message, l'essai est rattaché à trois empreintes hachées : l'appareil (empreinte calculée par le navigateur, en-tête `X-Client-Fp`, 180 jours), l'adresse e-mail normalisée (points et `+` de Gmail ignorés, 180 jours) et l'IP (`TRIAL_PER_IP`, 3 essais par 30 jours, pour ne pas pénaliser une famille ou un bureau). Si l'une a déjà servi, l'essai est refusé et la fenêtre d'achat l'explique. Exception de sécurité : un message classé orange ou rouge reçoit toujours une réponse, même sans crédit, et l'équipe est alertée.
+
+**Coûts IA** (`server/costs.js`) : chaque appel (réponse, classification de risque, test de prompt) enregistre modèle, jetons d'entrée, de sortie et de cache, et coût. Tarifs par défaut (USD par million de jetons) : `claude-sonnet-5-5` 2 / 10, `claude-haiku-5-5` 0,10 / 0,50, modifiables avec `AI_PRICES` ; conversion par `USD_EUR`. Le texte des messages n'y est jamais copié. Les consignes des accompagnants sont mises en cache chez Anthropic (lecture à 5 % du prix).
+
+**Revenus et surveillance des paiements** (`/admin/finances`) : chiffre d'affaires, achats, recharges automatiques, panier moyen, coût IA, marge brute, par jour sur 7, 30, 90 ou 365 jours ; ventes par pack ; coûts par modèle et par accompagnant. Toutes les heures, le contrôle des paiements (`server/canary.js`) compare les paiements Stripe réussis des 24 dernières heures aux achats enregistrés : un paiement sans crédits (webhook perdu) est crédité automatiquement et l'équipe est prévenue (`ALERT_EMAIL`, webhook). Bouton « Lancer le contrôle maintenant ».
+
+**E-mails de cycle de vie** (`server/lifecycle.js`), objets volontairement neutres :
+- toujours (si l'e-mail est connu) : code de connexion, bienvenue, reçu d'achat, « il vous reste 3 crédits » (une fois par semaine au plus, seulement sans recharge automatique), échec de recharge automatique ;
+- seulement avec la case « recevoir des nouvelles » cochée : relance après 7 jours d'inactivité, et relance des clients partis (au moins un achat, 30 jours sans visite, une fois par trimestre au plus). Jamais à une personne dont une alerte orange ou rouge n'est pas prise en charge, jamais entre 20 h et 9 h. Lancées toutes les heures, ou à la main depuis `/admin/finances`.
+- Chaque e-mail non indispensable a un lien de désinscription signé (`/desinscription/`) et l'en-tête `List-Unsubscribe` « un clic » exigé par Gmail et Yahoo.
+
+**Lettre et guides à télécharger** : 5 guides PDF de 11 à 13 pages (anxiété, sommeil, épuisement, deuil, aidants). Formulaire sur `/guides/`, sur l'accueil et en bas de chaque article (guide choisi selon le thème). Double consentement : un lien de confirmation est envoyé, puis le guide par un lien signé (`/guides/merci/`). `/admin/newsletter` : abonnés par guide et par source, envoi d'une lettre à tous les abonnés confirmés, export CSV. Pour modifier un guide : éditer `guides/<nom>.md`, relancer `python3 build_guides.py`.
+
+**Application installable** : manifeste, icônes, service worker (`pwa/sw.js` : pages réseau d'abord, page hors ligne avec les numéros d'urgence, jamais de cache pour `/api/` et `/admin/`). Proposition d'installation discrète après 20 secondes (refusable, jamais sur la page du chat), mode d'emploi iPhone/Android sur `/application/`.
+
+**Référencement** : la date `<lastmod>` du sitemap et la date « mis à jour le » des articles ne changent que quand le contenu change (empreintes dans `.seo-state.json`, à conserver entre deux déploiements). Pour Google : déclarer `https://www.votre-domaine.fr/sitemap.xml` une fois dans la Search Console, il le relit seul. L'API Google Indexing n'est pas utilisée : Google la réserve aux offres d'emploi et aux vidéos en direct, et l'utiliser pour des articles peut nuire au site. Pour Bing (et les assistants qui s'appuient sur lui) : définir `INDEXNOW_KEY` (32 caractères hexadécimaux, `openssl rand -hex 16`), relancer `build.py` (qui publie la clé), puis `python3 indexnow.py --site-url https://www.votre-domaine.fr` après chaque déploiement.
 
 ## Sécurité du back-office
 
@@ -106,7 +130,9 @@ Déposez vos six images dans `static/img/accompagnants/` sous les noms `clara.jp
 
 - `/parler/` : fenêtre de consentement avant le premier message (18 ans, traitement des données ; enregistrée côté serveur, le chat refuse sans), fenêtre d'achat de crédits quand la période gratuite est finie (packs depuis `PACKS`, case de recharge automatique cochée), bouton « Arrêter la réponse », « Recommencer », indicateur d'essai gratuit.
 - `/credits/` : page tarifs (essai gratuit et packs de crédits) avec questions fréquentes ; `/abonnement/` redirige vers elle.
-- `/mon-compte/` : crédits restants, historique des achats, case de recharge automatique, accès à la carte enregistrée et aux reçus (portail Stripe), suppression de toutes les données avec confirmation.
+- `/mon-compte/` : connexion par code e-mail, choix de recevoir des nouvelles, crédits restants, historique des achats, case de recharge automatique, accès à la carte enregistrée et aux reçus (portail Stripe), suppression de toutes les données avec confirmation.
+- `/guides/`, `/guides/merci/`, `/desinscription/` : guides à télécharger, confirmation, désinscription.
+- `/application/` et `/hors-ligne/` : installer l'application, page affichée sans connexion.
 - `/contact/` : formulaire envoyé par e-mail à `CONTACT_EMAIL` (sinon `ALERT_EMAIL`), via le SMTP configuré.
 - `/a-propos/`, `/confidentialite/`, `/cgv/`, `/mentions-legales/` : textes rédigés, avec des crochets `[...]` uniquement pour l'identité de la société, le DPO et le médiateur.
 
@@ -137,6 +163,9 @@ Pour changer les packs : la même variable `PACKS` dans `.env` (serveur) et au m
 /conseils/<theme>/<article>/        article (balisage Article, FAQPage, BreadcrumbList)
 /parler/                            chat
 /urgence/                           numéros d'urgence
+/credits/  /mon-compte/             tarifs, compte
+/guides/                            guides à télécharger
+/application/                       installer l'application
 /mentions-legales/
 /sitemap.xml  /robots.txt
 /api/...  /admin/...                serveur (exclus de l'indexation)

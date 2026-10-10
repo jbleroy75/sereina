@@ -22,9 +22,11 @@ db.exec(`CREATE TABLE IF NOT EXISTS email_queue (
   sent_at TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_email_queue_due ON email_queue(status, next_retry_at);`);
+try { db.exec("ALTER TABLE email_queue ADD COLUMN headers TEXT"); } catch {}
 
 const q = {
-  insert: db.prepare("INSERT INTO email_queue (type, recipient, subject, body, reply_to, priority, next_retry_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"),
+  insert: db.prepare("INSERT INTO email_queue (type, recipient, subject, body, reply_to, priority, next_retry_at, created_at, headers) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"),
+  insertDev: db.prepare("INSERT INTO email_queue (type, recipient, subject, body, priority, status, next_retry_at, created_at, headers) VALUES (?, ?, ?, ?, ?, 'DEV', ?, ?, ?)"),
   due: db.prepare("SELECT * FROM email_queue WHERE status = 'PENDING' AND next_retry_at <= ? ORDER BY id LIMIT ?"),
   sent: db.prepare("UPDATE email_queue SET status = 'SENT', sent_at = ?, attempts = attempts + 1 WHERE id = ?"),
   retry: db.prepare("UPDATE email_queue SET attempts = attempts + 1, next_retry_at = ?, last_error = ? WHERE id = ?"),
@@ -46,10 +48,17 @@ function getTransport() {
 }
 
 /** Met un e-mail en file. Retourne l'id, ou null si l'e-mail n'est pas configuré. */
-export function queueEmail({ type, to, subject, text, replyTo = null, priority = "normal" }) {
-  if (!emailConfigured() || !to) return null;
+export function queueEmail({ type, to, subject, text, replyTo = null, priority = "normal", headers = null }) {
+  if (!to) return null;
+  if (!emailConfigured()) {
+    // Mode développement : MAIL_DEV_LOG=1 enregistre l'e-mail (statut DEV) et l'affiche, sans l'envoyer.
+    if (process.env.MAIL_DEV_LOG !== "1") return null;
+    const r = q.insertDev.run(type, String(to), String(subject), String(text), priority, now(), now(), headers ? JSON.stringify(headers) : null);
+    console.log(`[mail:dev] ${type} → ${to} : ${subject}`);
+    return r.lastInsertRowid;
+  }
   const clean = s => String(s ?? "").replace(/[\r\n]/g, " ").slice(0, 500); // anti-injection d'en-têtes (repris)
-  const r = q.insert.run(type, clean(to), clean(subject), String(text), replyTo ? clean(replyTo) : null, priority, now(), now());
+  const r = q.insert.run(type, clean(to), clean(subject), String(text), replyTo ? clean(replyTo) : null, priority, now(), now(), headers ? JSON.stringify(headers) : null);
   // Tentative immédiate, sans bloquer l'appelant
   setImmediate(() => processQueue(5).catch(e => console.error("mailqueue", e.message)));
   return r.lastInsertRowid;
@@ -63,7 +72,7 @@ export async function processQueue(batch = 50) {
   try {
     for (const m of q.due.all(now(), batch)) {
       try {
-        await getTransport().sendMail({ from: process.env.SMTP_FROM || process.env.SMTP_USER, to: m.recipient, subject: m.subject, text: m.body, replyTo: m.reply_to || undefined, priority: m.priority === "high" ? "high" : "normal" });
+        await getTransport().sendMail({ from: process.env.SMTP_FROM || process.env.SMTP_USER, to: m.recipient, subject: m.subject, text: m.body, replyTo: m.reply_to || undefined, priority: m.priority === "high" ? "high" : "normal", headers: m.headers ? JSON.parse(m.headers) : undefined });
         q.sent.run(now(), m.id); result.sent++;
       } catch (e) {
         const err = String(e.message || e).slice(0, 300);

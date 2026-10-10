@@ -1,6 +1,6 @@
 // Repris de renta-immo (middleware.ts) : en-têtes de sécurité, CSRF par contrôle d'Origin, limite de taille.
 const SAFE = new Set(["GET", "HEAD", "OPTIONS"]);
-const CSRF_EXEMPT = new Set(["/api/stripe/webhook"]);
+const CSRF_EXEMPT = new Set(["/api/stripe/webhook", "/api/unsubscribe"]); // ce dernier est protégé par signature (désinscription « un clic » des messageries)
 
 export function securityHeaders({ https }) {
   const csp = [

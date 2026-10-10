@@ -56,3 +56,12 @@ export async function notifyAlert({ user, level, reason, lastMessage, adminUrl }
   if (!results.length) console.warn(`[ALERTE ${label}] aucun canal de notification configuré. ${reason} (${user.id})`);
   return results;
 }
+
+/** Alerte d'exploitation (paiements, file d'e-mails…) vers l'équipe : e-mail, webhook, Telegram. */
+export async function notifyOps(subject, body) {
+  const s = `[Sereina] ${subject}`;
+  if (process.env.ALERT_EMAIL) queueEmail({ type: "ops", to: process.env.ALERT_EMAIL, subject: s, text: body, priority: "high" });
+  if (process.env.ALERT_WEBHOOK_URL) { try { await fetch(process.env.ALERT_WEBHOOK_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: `${s}\n${body}`, content: `${s}\n${body}` }) }); } catch {} }
+  if (process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID) { try { await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID, text: `⚙️ ${s}\n${body}` }) }); } catch {} }
+  console.warn(`[ops] ${subject} — ${body.split("\n")[0]}`);
+}

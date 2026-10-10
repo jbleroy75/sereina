@@ -237,3 +237,46 @@ ul.plain.big li{margin-bottom:8px}
 @media (max-width:520px){.pricing.three{grid-template-columns:1fr}}
 
 .hp{position:absolute;left:-9999px;top:-9999px;height:0;overflow:hidden}
+
+/* Lettre et guides à télécharger */
+.nlbox{display:grid;grid-template-columns:120px 1fr;gap:20px;align-items:start;margin:32px 0;padding:20px;background:var(--paper);border:1px solid var(--line);border-top:3px solid var(--steel)}
+.nlbox.wide{grid-template-columns:1fr}
+.nlbox h3{font-size:1.05em;margin-bottom:6px}
+.nlbox p{margin-bottom:10px}
+.nlcover{aspect-ratio:3/4;background:var(--steel);color:var(--steel-ink);padding:12px 10px;display:flex;flex-direction:column;justify-content:space-between;font-family:var(--display)}
+.nlcover span{font-size:.62em;text-transform:uppercase;letter-spacing:.06em;opacity:.85}
+.nlcover b{font-size:.8em;line-height:1.25;font-weight:600}
+.nlform{display:grid;gap:10px;margin:10px 0 6px;font-family:var(--display);font-size:.92em}
+.nlform select,.nlform input[type=email]{font:inherit;width:100%;min-height:46px;padding:8px 10px;border:1px solid var(--line);background:var(--paper);color:var(--fg)}
+.nlrow{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.nlrow .grow{flex:1 1 240px}
+.nlrow .btn{min-height:46px}
+.nlmsg{font-size:.95em;margin:0}
+.nlmsg:empty{display:none}
+.nlmsg.ok,.sub.ok{color:var(--steel);font-weight:500}
+.nlmsg.err,.sub.err{color:var(--alert-fg)}
+.fine{font-family:var(--display);font-size:.78em;color:var(--muted);line-height:1.5}
+.guides{list-style:none;padding:0;margin:24px 0}
+.guides .guide{display:grid;grid-template-columns:150px 1fr;gap:24px;padding:28px 0;border-top:1px solid var(--line)}
+.guides h2{font-size:1.25em;margin-bottom:6px}
+.guides .sub{margin:0 0 8px}
+@media (max-width:620px){.nlbox,.guides .guide{grid-template-columns:1fr}.nlcover{max-width:110px}}
+
+/* Mon compte : e-mail */
+.mailbox{margin:22px 0 28px;padding:20px;background:var(--paper);border:1px solid var(--line)}
+.mailbox h2{font-size:1.1em;margin-bottom:10px}
+.mailbox .form{margin:0}
+#codeRow{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.ghost.small{min-height:34px;padding:4px 12px;font-size:.85em}
+.modal-box .note{background:var(--alert-bg);color:var(--alert-fg);border:1px solid var(--alert-line);padding:10px 12px;font-family:var(--display);font-size:.9em}
+
+/* Application */
+.steps{padding-left:1.4em;margin:10px 0 24px}
+.steps li{margin:8px 0;padding-left:4px}
+.installbar{position:fixed;left:12px;right:12px;bottom:12px;z-index:50;max-width:620px;margin:0 auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--paper);border:1px solid var(--line);border-left:4px solid var(--steel);padding:12px 14px;font-family:var(--display);font-size:.88em;box-shadow:0 6px 24px rgba(0,0,0,.12)}
+.installbar p{flex:1 1 220px;margin:0}
+.form .check input{width:22px;height:22px;margin:3px 0 0;padding:0}
+#codeRow[hidden]{display:none}
+#mailCode{max-width:12em;letter-spacing:.2em;font-family:var(--display)}
+[hidden]{display:none!important}
+@media (max-width:640px){.topnav{gap:6px 14px;font-size:.8em}.topnav .btn.small{padding:6px 10px;min-height:34px}.sizebtn{padding:4px 8px}.masthead .in{padding:10px 16px}}

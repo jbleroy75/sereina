@@ -2,7 +2,7 @@
 """Génère le site statique Sereina dans dist/ à partir de content/ et topics.json.
 Usage : python3 build.py [--site-url https://www.exemple.fr]
 """
-import json, os, re, shutil, sys, html, datetime
+import json, os, re, shutil, sys, html, datetime, hashlib
 import markdown, yaml
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -20,6 +20,37 @@ PRICE_LABEL = f"à partir de {PACKS[0]['price']}"
 FREE_MINUTES = os.environ.get("FREE_MINUTES", "5")
 FREE_MESSAGES = os.environ.get("FREE_MESSAGES", "8")
 RETENTION_DAYS = os.environ.get("RETENTION_DAYS", "90")
+INDEXNOW_KEY = os.environ.get("INDEXNOW_KEY", "")
+SEO_STATE_FILE = os.path.join(ROOT, ".seo-state.json")
+try:
+    SEO_STATE = json.load(open(SEO_STATE_FILE))
+except Exception:
+    SEO_STATE = {}
+WRITTEN = {}  # chemin -> date de dernière modification réelle (pour le sitemap et IndexNow)
+
+def stamp(path, source):
+    """Date de dernière modification d'une page : ne change que si son contenu source change."""
+    h = hashlib.sha256(source.encode("utf-8")).hexdigest()[:20]
+    st = SEO_STATE.get(path)
+    if not st or st.get("hash") != h:
+        st = {"hash": h, "lastmod": TODAY, "published": (st or {}).get("published") or TODAY, "pinged": (st or {}).get("pinged")}
+        SEO_STATE[path] = st
+    return st["lastmod"]
+
+def fr_date(iso):
+    y, m, d = iso.split("-")
+    return f"{d}/{m}/{y}"
+
+# Guides à télécharger (lead-magnet) : métadonnées lues dans guides/*.md, PDF générés par build_guides.py
+GUIDE_ORDER = ["anxiete", "sommeil", "epuisement", "deuil", "prendre-soin"]
+DL_GUIDES = {}
+for _g in GUIDE_ORDER:
+    _f = os.path.join(ROOT, "guides", f"{_g}.md")
+    if os.path.exists(_f):
+        _fm = yaml.safe_load(open(_f, encoding="utf-8").read().split("---", 2)[1])
+        DL_GUIDES[_g] = {"slug": _g, "titre": _fm["titre"], "sous_titre": _fm["sous_titre"], "accroche": _fm.get("accroche", "")}
+THEME_GUIDE = {"anxiete": "anxiete", "sommeil": "sommeil", "travail": "epuisement", "deuil": "deuil", "solitude": "deuil",
+               "couple": "prendre-soin", "famille": "prendre-soin", "aide": "prendre-soin"}
 
 topics = json.load(open(os.path.join(ROOT, "topics.json")))
 THEMES = topics["themes"]
@@ -107,6 +138,12 @@ def layout(title, description, body, path, extra_head="", nav_on="", toc=None, o
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:ital,wght@0,400;0,500;1,400&display=swap">
 <link rel="stylesheet" href="/static/style.css">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#2f4a64">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/static/icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="Sereina">
 {extra_head}
 </head>
 <body>
@@ -117,6 +154,7 @@ def layout(title, description, body, path, extra_head="", nav_on="", toc=None, o
     <a href="/accompagnants/"{on('accompagnants')}>Les accompagnants</a>
     <a href="/urgence/"{on('urgence')}>Urgence</a>
     <a href="/credits/"{on('credits')}>Tarifs</a>
+    <a href="/mon-compte/"{on('compte')}>Mon compte</a>
     <a class="btn small" href="/parler/">Parler maintenant</a>
     <button class="sizebtn" id="sizeBtn" type="button" aria-pressed="false">Agrandir le texte</button>
   </nav>
@@ -127,7 +165,7 @@ def layout(title, description, body, path, extra_head="", nav_on="", toc=None, o
 {body}
 <footer>
   <span>Sereina, {TODAY[:4]}. Un espace d'écoute, pas un service médical.</span>
-  <span><a href="/a-propos/">À propos</a> · <a href="/credits/">Tarifs</a> · <a href="/contact/">Contact</a> · <a href="/confidentialite/">Confidentialité</a> · <a href="/cgv/">Conditions</a> · <a href="/mentions-legales/">Mentions légales</a></span>
+  <span><a href="/a-propos/">À propos</a> · <a href="/guides/">Guides gratuits</a> · <a href="/application/">Application</a> · <a href="/credits/">Tarifs</a> · <a href="/contact/">Contact</a> · <a href="/confidentialite/">Confidentialité</a> · <a href="/cgv/">Conditions</a> · <a href="/mentions-legales/">Mentions légales</a></span>
 </footer>
 </main>
 </div>
@@ -136,7 +174,10 @@ def layout(title, description, body, path, extra_head="", nav_on="", toc=None, o
 </html>
 """
 
-def write(path, content):
+def write(path, content, track=True):
+    if track and path.endswith("/"):
+        norm = content.replace(TODAY, "").replace(fr_date(TODAY), "")
+        WRITTEN[path] = WRITTEN.get(path) or stamp(path, norm)
     full = os.path.join(DIST, path.lstrip("/"))
     if path.endswith("/"):
         full = os.path.join(full, "index.html")
@@ -217,6 +258,8 @@ def render_article(a):
     theme = THEMES[a["theme"]]
     fm, body = parse_article(a["theme"], a["slug"])
     path = f"/conseils/{theme['slug']}/{a['slug']}/"
+    lastmod = stamp(path, json.dumps([fm, body, a["title"]], ensure_ascii=False))
+    WRITTEN[path] = lastmod
     md = markdown.Markdown(extensions=["toc"], extension_configs={"toc": {"toc_depth": "2"}})
     md.reset()
     content_html = md.convert(body)
@@ -236,7 +279,7 @@ def render_article(a):
     ld = [{
         "@context": "https://schema.org", "@type": "Article",
         "headline": fm["title"], "description": fm["description"],
-        "inLanguage": "fr-FR", "datePublished": TODAY, "dateModified": TODAY,
+        "inLanguage": "fr-FR", "datePublished": SEO_STATE[path].get("published") or lastmod, "dateModified": lastmod,
         "author": {"@type": "Organization", "name": "Sereina"},
         "publisher": {"@type": "Organization", "name": "Sereina"},
         "mainEntityOfPage": url(path), "wordCount": words,
@@ -259,7 +302,7 @@ def render_article(a):
 <nav class="crumbs" aria-label="Fil d'Ariane"><a href="/">Accueil</a><span>›</span><a href="/conseils/">Conseils</a><span>›</span><a href="/conseils/{theme['slug']}/">{esc(theme['name'])}</a></nav>
 <div class="article-head">
   <h1>{esc(h1)}</h1>
-  <div class="meta"><span>Lecture : {reading} min</span><span>Mis à jour le {datetime.date.today().strftime('%d/%m/%Y')}</span><span>Relu par l'équipe Sereina</span></div>
+  <div class="meta"><span>Lecture : {reading} min</span><span>Mis à jour le {fr_date(lastmod)}</span><span>Relu par l'équipe Sereina</span></div>
 </div>
 <article class="article">
 {content_html}
@@ -270,11 +313,167 @@ def render_article(a):
   <a class="btn" href="/parler/?avec={GUIDE_KEY[guide]}">Parler avec {esc(guide)}</a></div>
 </div>
 <div class="related"><h3>À lire aussi</h3><ul>{rel_html}</ul></div>
+{nl_box(THEME_GUIDE.get(a["theme"]), "article")}
 <p class="disclaimer">Cette page informe et ne remplace pas une consultation. Sereina n'est pas un service médical. En cas de danger immédiat, appelez le 15 ou le 3114 (gratuit, 24 h/24).</p>
 </article>
 """
-    write(path, layout(fm["title"], fm["description"], body_html, path, extra, "conseils", toc))
+    write(path, layout(fm["title"], fm["description"], body_html, path, extra + NL_SCRIPT, "conseils", toc), track=False)
     return {"path": path, "title": fm["title"], "description": fm["description"], "theme": a["theme"], "reading": reading, "words": words, "autolinks": nb_auto}
+
+# ---------- Lettre et guides à télécharger ----------
+NL_SCRIPT = '<script src="/static/newsletter.js" defer></script>'
+NL_CONSENT = ('<p class="fine">En vous inscrivant, vous recevez le guide puis la lettre Sereina, une à deux fois par mois. '
+              'Un lien de désinscription figure dans chaque e-mail. Votre adresse n’est jamais vendue ni partagée. '
+              '<a href="/confidentialite/#lettre">En savoir plus</a>.</p>')
+
+def nl_form(guide, source, label="Recevoir le guide", select=False):
+    sel = ""
+    if select:
+        sel = '<label>Le guide qui vous intéresse<br><select name="guide">' + "".join(
+            f'<option value="{k}"{" selected" if k == guide else ""}>{esc(g["titre"].split(" :")[0])}</option>' for k, g in DL_GUIDES.items()) + "</select></label>"
+    return f'''<form class="nlform" data-guide="{esc(guide or "")}" data-source="{esc(source)}">
+  <div class="hp" aria-hidden="true"><label>Site web<input name="website" tabindex="-1" autocomplete="off"></label></div>
+  {sel}<div class="nlrow"><label class="grow">Votre adresse e-mail<br><input type="email" name="email" required autocomplete="email" placeholder="prenom.nom@exemple.fr"></label>
+  <button class="btn" type="submit">{esc(label)}</button></div>
+  <p class="nlmsg" role="status" aria-live="polite"></p>
+</form>'''
+
+def nl_box(guide, source):
+    g = DL_GUIDES.get(guide)
+    if not g:
+        return ""
+    return f'''<aside class="nlbox"><div class="nlcover" aria-hidden="true"><span>Guide gratuit</span><b>{esc(g["titre"].split(" :")[0])}</b></div>
+<div><h3>Guide gratuit à télécharger</h3><p><b>{esc(g["titre"])}</b>. {esc(g["accroche"])} Un PDF à lire à votre rythme et à imprimer.</p>
+{nl_form(guide, source)}{NL_CONSENT}</div></aside>'''
+
+def render_guides():
+    items = "".join(f'''<li class="guide" id="{k}" data-guide-title="{k}" data-title="{esc(g["titre"])}"><div class="nlcover" aria-hidden="true"><span>Guide gratuit</span><b>{esc(g["titre"].split(" :")[0])}</b></div>
+<div><h2>{esc(g["titre"])}</h2><p class="sub">{esc(g["sous_titre"])}</p><p>{esc(g["accroche"])}</p>{nl_form(k, "guides", "Recevoir ce guide")}</div></li>''' for k, g in DL_GUIDES.items())
+    body = f"""
+<section>
+<h1>Guides gratuits à télécharger</h1>
+<p class="lede">Des guides pratiques d'une douzaine de pages, écrits simplement, à lire à votre rythme et à imprimer. Indiquez votre adresse e-mail : vous recevez un lien de confirmation, puis le guide.</p>
+<ul class="guides">{items}</ul>
+{NL_CONSENT}
+</section>{NL_SCRIPT}"""
+    write("/guides/", layout("Guides gratuits à télécharger : anxiété, sommeil, épuisement, deuil | Sereina",
+                             "Cinq guides pratiques gratuits en PDF : apaiser l'anxiété, mieux dormir, sortir de l'épuisement, traverser un deuil, prendre soin de soi quand on aide un proche.",
+                             body, "/guides/", one_col=True))
+    titles = "".join(f'<span hidden data-guide-title="{k}" data-title="{esc(g["titre"])}"></span>' for k, g in DL_GUIDES.items())
+    body = f"""
+<section>
+<div id="okBox">
+<h1>Merci, votre inscription est confirmée</h1>
+<p class="lede">Votre guide <span id="dlName"></span> vous a aussi été envoyé par e-mail, pour que vous puissiez le retrouver plus tard.</p>
+<div class="cta"><a class="btn" id="dlBtn" href="/guides/" hidden>Télécharger le guide (PDF)</a> <a class="ghost" href="/guides/">Voir les autres guides</a></div>
+<p class="sub">Vous recevrez la lettre Sereina une à deux fois par mois. Chaque e-mail contient un lien pour vous désinscrire en un clic.</p>
+</div>
+<div id="errBox" hidden>
+<h1>Ce lien n'est plus valable</h1>
+<p class="lede">Le lien de confirmation a peut-être déjà servi ou a expiré. Vous pouvez vous réinscrire en quelques secondes depuis la page des guides.</p>
+<div class="cta"><a class="btn" href="/guides/">Revenir aux guides</a></div>
+</div>
+{titles}
+</section>
+<script src="/static/merci.js" defer></script>"""
+    write("/guides/merci/", layout("Inscription confirmée | Sereina", "Votre inscription à la lettre Sereina est confirmée.", body, "/guides/merci/", one_col=True, noindex=True), track=False)
+
+    body = """
+<section>
+<div id="unsubAsk">
+<h1>Se désinscrire</h1>
+<p class="lede">Vous ne recevrez plus <span id="unsubWhat">nos e-mails</span>. Les e-mails indispensables à votre compte (code de connexion, reçus d'achat) continueront de vous être envoyés.</p>
+<div class="cta"><button class="btn" id="unsubBtn" type="button">Confirmer la désinscription</button></div>
+<p class="sub" id="unsubMsg"></p>
+</div>
+<div id="unsubOk" hidden><h1>C'est fait</h1><p class="lede">Vous êtes désinscrit. Vous pouvez vous réinscrire quand vous voulez depuis <a href="/guides/">les guides</a> ou <a href="/mon-compte/">votre compte</a>.</p></div>
+<div id="unsubErr" hidden><h1>Lien invalide</h1><p class="lede">Ce lien de désinscription est incomplet ou abîmé. Utilisez le lien de votre dernier e-mail, ou écrivez-nous via la <a href="/contact/">page contact</a> : nous ferons la désinscription à la main.</p></div>
+</section>
+<script src="/static/unsub.js" defer></script>"""
+    write("/desinscription/", layout("Se désinscrire | Sereina", "Se désinscrire des e-mails Sereina.", body, "/desinscription/", one_col=True, noindex=True), track=False)
+
+# ---------- Application installable (PWA) ----------
+def render_pwa():
+    body = """
+<section>
+<h1>Installer Sereina sur votre téléphone</h1>
+<p class="lede">Sereina peut s'ajouter à l'écran d'accueil de votre téléphone, de votre tablette ou de votre ordinateur, comme une application. Rien à télécharger dans un magasin d'applications, rien à payer, et cela prend moins d'une minute.</p>
+<h2>Sur iPhone ou iPad</h2>
+<ol class="steps">
+  <li>Ouvrez <b>www.sereina.fr</b> avec <b>Safari</b>.</li>
+  <li>Touchez le bouton <b>Partager</b> en bas de l'écran (un carré avec une flèche vers le haut).</li>
+  <li>Faites défiler et touchez <b>Sur l'écran d'accueil</b>.</li>
+  <li>Touchez <b>Ajouter</b>, en haut à droite. L'icône Sereina apparaît avec vos autres applications.</li>
+</ol>
+<h2>Sur Android</h2>
+<ol class="steps">
+  <li>Ouvrez <b>www.sereina.fr</b> avec <b>Chrome</b>.</li>
+  <li>Touchez les <b>trois points</b> en haut à droite.</li>
+  <li>Touchez <b>Installer l'application</b> ou <b>Ajouter à l'écran d'accueil</b>.</li>
+  <li>Confirmez. L'icône Sereina apparaît sur votre écran d'accueil.</li>
+</ol>
+<h2>Sur ordinateur</h2>
+<p class="sub">Avec Chrome ou Edge, cliquez sur la petite icône d'installation à droite de la barre d'adresse, puis sur <b>Installer</b>.</p>
+<h2>Bon à savoir</h2>
+<div class="run"><p>L'application ouvre le même Sereina que le site : vos crédits et vos conversations sont les mêmes. Pour les retrouver sur plusieurs appareils, ajoutez votre adresse e-mail dans <a href="/mon-compte/">Mon compte</a>. Sans connexion internet, l'application affiche les numéros d'urgence ; les conversations, elles, demandent une connexion.</p></div>
+<div class="cta"><a class="btn" href="/parler/">Commencer à parler</a></div>
+</section>"""
+    write("/application/", layout("Installer l'application Sereina sur iPhone, Android ou ordinateur", "Ajoutez Sereina à l'écran d'accueil de votre téléphone en moins d'une minute, sans magasin d'applications : la marche à suivre pour iPhone, Android et ordinateur.", body, "/application/", one_col=True))
+    body = """
+<section>
+<h1>Vous n'êtes pas connecté à internet</h1>
+<p class="lede">Sereina a besoin d'une connexion pour les conversations. Vérifiez le Wi-Fi ou les données mobiles, puis réessayez.</p>
+<div class="alert"><b>En cas d'urgence, le téléphone fonctionne sans internet :</b> 15 (SAMU), 3114 (prévention du suicide), 112 (urgences européennes), 114 par SMS. Gratuits, jour et nuit.</div>
+<div class="cta"><a class="btn" href="/">Réessayer</a></div>
+</section>"""
+    write("/hors-ligne/", layout("Hors ligne | Sereina", "Pas de connexion internet.", body, "/hors-ligne/", one_col=True, noindex=True), track=False)
+
+    # Manifeste et service worker
+    manifest = {"name": "Sereina, espace d'écoute", "short_name": "Sereina", "lang": "fr", "dir": "ltr",
+                "description": "Parler de ce qui vous pèse, jour et nuit, avec un accompagnant d'écoute.",
+                "start_url": "/?source=app", "scope": "/", "display": "standalone", "orientation": "portrait-primary",
+                "background_color": "#f2f4f6", "theme_color": "#2f4a64", "categories": ["health", "lifestyle"],
+                "icons": [{"src": "/static/icons/icon-192.png", "sizes": "192x192", "type": "image/png"},
+                          {"src": "/static/icons/icon-512.png", "sizes": "512x512", "type": "image/png"},
+                          {"src": "/static/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}],
+                "shortcuts": [{"name": "Parler maintenant", "url": "/parler/"}, {"name": "Urgence", "url": "/urgence/"}, {"name": "Mon compte", "url": "/mon-compte/"}]}
+    with open(os.path.join(DIST, "manifest.webmanifest"), "w", encoding="utf-8") as f:
+        json.dump(manifest, f, ensure_ascii=False, indent=1)
+    sw = open(os.path.join(ROOT, "pwa", "sw.js"), encoding="utf-8").read()
+    version = hashlib.sha256((sw + open(os.path.join(ROOT, "static", "style.css")).read() + open(os.path.join(ROOT, "static", "site.js")).read()).encode()).hexdigest()[:10]
+    with open(os.path.join(DIST, "sw.js"), "w", encoding="utf-8") as f:
+        f.write(sw.replace("__VERSION__", version))
+    shutil.copy(os.path.join(DIST, "static", "icons", "favicon.ico"), os.path.join(DIST, "favicon.ico"))
+
+def make_icons():
+    """Icônes de l'application (PNG), dessinées avec la police du site. Régénérées seulement si absentes."""
+    d = os.path.join(ROOT, "static", "icons")
+    os.makedirs(d, exist_ok=True)
+    svg = os.path.join(d, "icon.svg")
+    if not os.path.exists(svg):
+        open(svg, "w").write('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#2f4a64"/><text x="32" y="45" text-anchor="middle" font-family="IBM Plex Sans,Arial,sans-serif" font-weight="600" font-size="38" fill="#fff">S</text><rect x="16" y="52" width="32" height="3" fill="#8fb0cf"/></svg>')
+    if os.path.exists(os.path.join(d, "icon-512.png")):
+        return
+    from PIL import Image, ImageDraw, ImageFont
+    font_path = os.path.join(ROOT, "assets", "fonts", "IBMPlexSans-SemiBold.ttf")
+    def draw(size, pad_ratio):
+        im = Image.new("RGB", (size, size), "#2f4a64")
+        dr = ImageDraw.Draw(im)
+        inner = size * (1 - 2 * pad_ratio)
+        f = ImageFont.truetype(font_path, int(inner * 0.62))
+        bb = dr.textbbox((0, 0), "S", font=f)
+        w, h = bb[2] - bb[0], bb[3] - bb[1]
+        cy = size / 2 - inner * 0.04
+        dr.text((size / 2 - w / 2 - bb[0], cy - h / 2 - bb[1]), "S", font=f, fill="#ffffff")
+        bw, bh = inner * 0.5, max(2, inner * 0.045)
+        top = cy + h / 2 + inner * 0.08
+        dr.rectangle([size / 2 - bw / 2, top, size / 2 + bw / 2, top + bh], fill="#8fb0cf")
+        return im
+    draw(512, 0.06).save(os.path.join(d, "icon-512.png"))
+    draw(192, 0.06).save(os.path.join(d, "icon-192.png"))
+    draw(512, 0.18).save(os.path.join(d, "icon-maskable-512.png"))
+    draw(180, 0.08).save(os.path.join(d, "apple-touch-icon.png"))
+    draw(64, 0.04).save(os.path.join(d, "favicon.ico"), sizes=[(16, 16), (32, 32), (48, 48)])
 
 # ---------- Pages d'index ----------
 def render_theme(tkey, infos):
@@ -320,7 +519,7 @@ def render_home(all_infos):
         "combien-de-temps-dure-un-deuil", "solitude-apres-60-ans")]
     picks_html = "".join(f'<li><a href="{i["path"]}">{esc(i["title"])}</a><p>{esc(i["description"])}</p></li>' for i in picks)
     toc = [("accueil", "Accueil"), ("comment", "Comment ça marche"), ("accompagnants", "Les accompagnants"),
-           ("conseils", "Conseils gratuits"), ("urgence", "En cas d'urgence"), ("questions", "Questions fréquentes")]
+           ("conseils", "Conseils gratuits"), ("guides", "Guides à télécharger"), ("urgence", "En cas d'urgence"), ("questions", "Questions fréquentes")]
     body = f"""
 <section id="accueil">
   <h1>Parler de ce qui vous pèse, simplement.</h1>
@@ -348,6 +547,11 @@ def render_home(all_infos):
   <p class="sub">Cent pages pour comprendre ce que vous vivez et savoir quoi faire, écrites simplement. <a href="/conseils/">Voir tous les thèmes</a>.</p>
   <ul class="list">{picks_html}</ul>
 </section>
+<section id="guides">
+  <h2>Guides gratuits à télécharger</h2>
+  <p class="sub">Cinq guides pratiques en PDF, à lire à votre rythme et à imprimer. <a href="/guides/">Voir tous les guides</a>.</p>
+  <div class="nlbox wide"><div><p>Choisissez un guide et indiquez votre adresse e-mail : vous recevez un lien de confirmation, puis le guide.</p>{nl_form("anxiete", "accueil", "Recevoir le guide", select=True)}{NL_CONSENT}</div></div>
+</section>
 <section id="urgence">
   <h2>En cas d'urgence</h2>
   <p class="sub">Si vous êtes en danger, ou si quelqu'un près de vous l'est, parlez à un humain tout de suite. Ces numéros sont gratuits.</p>
@@ -363,9 +567,10 @@ def render_home(all_infos):
   <h2>Questions fréquentes</h2>
   <div class="faq">
     <details><summary>Est-ce que je parle à un vrai psychologue ?</summary><p>Non. Les accompagnants sont des programmes d'intelligence artificielle, préparés pour une écoute attentive et des outils simples issus des thérapies cognitives et comportementales. Ils ne sont pas des professionnels de santé et ne remplacent pas une consultation.</p></details>
-    <details><summary>Mes conversations sont-elles conservées ?</summary><p>Vos échanges sont conservés le temps de votre session et protégés. Ils ne sont jamais vendus ni partagés. Vous pouvez demander leur suppression à tout moment.</p></details>
+    <details><summary>Mes conversations sont-elles conservées ?</summary><p>Vos échanges sont conservés {RETENTION_DAYS} jours pour que vous puissiez reprendre là où vous en étiez, puis supprimés automatiquement. Ils ne sont jamais vendus ni partagés. Vous pouvez tout effacer à tout moment depuis « Mon compte ».</p></details>
     <details><summary>Que se passe-t-il si je vais vraiment mal ?</summary><p>L'accompagnant vous invitera à appeler le 3114 ou le 15 et vous indiquera les bons interlocuteurs. Il ne peut pas appeler à votre place : si vous êtes en danger, composez le numéro vous-même.</p></details>
     <details><summary>Je ne suis pas à l'aise avec l'informatique. Est-ce compliqué ?</summary><p>Non. Rien à installer. Vous choisissez un accompagnant, vous écrivez dans la case, vous cliquez sur « Envoyer ». Le bouton « Agrandir le texte » en haut de la page agrandit tout.</p></details>
+    <details><summary>Puis-je retrouver mes conversations sur un autre appareil ?</summary><p>Oui. Ajoutez votre adresse e-mail dans <a href="/mon-compte/">Mon compte</a> : vous recevez un code à 6 chiffres, sans mot de passe à retenir. Vos crédits et vos conversations vous suivent ensuite sur votre téléphone, votre tablette et votre ordinateur.</p></details>
     <details><summary>Est-ce gratuit ?</summary><p>Les premiers échanges sont gratuits, sans inscription. Pour continuer au-delà, vous achetez des crédits : 1 crédit = 1 message, sans abonnement ni date limite. <a href="/credits/">Voir les tarifs</a>.</p></details>
   </div>
 </section>"""
@@ -374,7 +579,7 @@ def render_home(all_infos):
         "description": "Espace d'écoute en ligne avec des accompagnants d'intelligence artificielle, et des conseils gratuits pour aller mieux."}, ensure_ascii=False) + "</script>"
     write("/", layout("Sereina, espace d'écoute : parler de ce qui vous pèse",
                       "Sereina : un espace d'écoute en ligne, jour et nuit. Écrivez ce qui vous pèse, un accompagnant d'écoute vous répond. Conseils gratuits sur l'anxiété, le sommeil, le travail, le couple, le deuil.",
-                      body, "/", extra, "", toc))
+                      body, "/", extra + NL_SCRIPT, "", toc))
 
 def render_urgence():
     body = """
@@ -413,7 +618,7 @@ def render_parler():
   <button type="button" class="ghost" id="resetBtn">Recommencer</button></div></div>
   <div class="log" id="log" aria-live="polite"></div>
   <form class="composer" id="composer"><label for="input" hidden>Votre message</label><textarea id="input" rows="2" placeholder="Écrivez ici ce qui vous préoccupe"></textarea><div class="acts"><button class="send" id="sendBtn" type="submit">Envoyer</button><button class="stop" id="stopBtn" type="button" hidden>Arrêter la réponse</button></div></form>
-  <p class="hint">La touche Entrée envoie le message. Pour aller à la ligne, utilisez Maj + Entrée. <a href="/mon-compte/">Mes crédits et mes données</a>.</p>
+  <p class="hint">La touche Entrée envoie le message. Pour aller à la ligne, utilisez Maj + Entrée. <a href="/mon-compte/">Mes crédits, mes données, me connecter</a>.</p>
 </div>
 <div class="alert"><b>Sereina n'est pas un service médical.</b> Si vous êtes en danger, appelez le 15 ou le 3114 (gratuit, 24 h/24).</div>
 </section>
@@ -432,10 +637,12 @@ def render_parler():
 <div class="modal" id="payModal" hidden role="dialog" aria-modal="true" aria-labelledby="payTitle">
   <div class="modal-box">
     <h2 id="payTitle">Continuer la conversation</h2>
+    <p class="note" id="payTrial" hidden>L'essai gratuit a déjà été utilisé sur cet appareil ou avec cette adresse : il est limité à un par personne.</p>
     <p>Vous avez utilisé les échanges gratuits. Pour continuer avec <span class="payGuide">votre accompagnant</span>, choisissez un pack de crédits. <b>1 crédit = 1 message envoyé.</b> Les crédits n'expirent pas.</p>
     <div class="packs" id="packs">PACKS_HTML</div>
     <label class="check"><input type="checkbox" id="autoCk" checked> Recharger automatiquement le même pack quand mes crédits sont épuisés, avec la carte enregistrée. Désactivable à tout moment dans « Mon compte ».</label>
     <div class="modal-acts"><a class="btn" id="buyBtn" href="/api/checkout?pack=DEFAULT_PACK&auto=1">Acheter et continuer</a><button class="ghost" type="button" id="payLater">Plus tard</button></div>
+    <p class="fine" id="payLogin">Vous avez déjà des crédits sur un autre appareil ? <a href="/mon-compte/?retour=/parler/">Connectez-vous avec votre e-mail</a> pour les retrouver.</p>
     <p class="fine">Paiement sécurisé par Stripe. Sereina ne voit jamais votre numéro de carte. <a href="/cgv/">Conditions</a>.</p>
   </div>
 </div>
@@ -498,7 +705,7 @@ def render_pages():
 </div>
 <div class="faq">
   <details><summary>Comment fonctionne la recharge automatique ?</summary><p>À l'achat, une case « recharger automatiquement » est cochée : quand vos crédits tombent à zéro en pleine conversation, le même pack est racheté avec la carte enregistrée, sans vous interrompre. Vous pouvez la décocher avant de payer, ou la désactiver ensuite depuis <a href="/mon-compte/">Mon compte</a>. Sans recharge automatique, rien n'est jamais prélevé sans que vous cliquiez vous-même sur « Acheter ».</p></details>
-  <details><summary>Les crédits expirent-ils ?</summary><p>Non. Ils restent sur votre compte, lié à cet appareil, jusqu'à ce que vous les utilisiez.</p></details>
+  <details><summary>Les crédits expirent-ils ?</summary><p>Non. Ils restent sur votre compte jusqu'à ce que vous les utilisiez. Ajoutez votre adresse e-mail dans <a href="/mon-compte/">Mon compte</a> pour les retrouver sur tous vos appareils, et ne pas les perdre si vous changez de téléphone.</p></details>
   <details><summary>Le paiement est-il sécurisé ?</summary><p>Oui. Il est confié à Stripe, prestataire de paiement utilisé par des millions de sites. Sereina ne voit ni ne stocke votre numéro de carte.</p></details>
   <details><summary>Puis-je me faire rembourser ?</summary><p>Les crédits non utilisés d'un pack peuvent être remboursés sur simple demande via la <a href="/contact/">page contact</a>, dans les quatorze jours suivant l'achat.</p></details>
   <details><summary>Est-ce que ça remplace un psychologue ?</summary><p>Non. Sereina est un espace d'écoute. Si votre situation demande un professionnel de santé, les accompagnants vous le diront et vous indiqueront vers qui vous tourner.</p></details>
@@ -511,7 +718,24 @@ def render_pages():
     body = """
 <section>
 <h1>Mon compte</h1>
-<p class="sub">Sereina ne demande ni e-mail ni mot de passe : votre espace est lié à cet appareil et à ce navigateur.</p>
+<p class="sub">Sans adresse e-mail, votre espace est lié à cet appareil et à ce navigateur. Ajoutez votre e-mail pour retrouver vos crédits et vos conversations partout : pas de mot de passe, un simple code reçu par e-mail.</p>
+<div class="mailbox" id="mailOut">
+<h2>Retrouver mon espace sur tous mes appareils</h2>
+<form class="form" id="mailForm">
+  <label>Votre adresse e-mail<br><input type="email" id="mailEmail" required autocomplete="email" placeholder="prenom.nom@exemple.fr"></label>
+  <div id="codeRow" hidden><label>Code reçu par e-mail (6 chiffres)<br><input id="mailCode" inputmode="numeric" autocomplete="one-time-code" maxlength="7" pattern="[0-9 ]*"></label> <button class="ghost small" id="mailChange" type="button">Changer d'adresse</button></div>
+  <label class="check"><input type="checkbox" id="mailMk"> J'accepte de recevoir de temps en temps des nouvelles de Sereina (rappels, nouveaux guides). Facultatif, désactivable à tout moment.</label>
+  <button class="btn" id="mailBtn" type="submit">Recevoir un code</button>
+  <p class="sub" id="mailMsg" role="status" aria-live="polite"></p>
+</form>
+<p class="fine">Si vous vous êtes déjà connecté sur un autre appareil avec cette adresse, vos crédits et conversations de cet appareil seront ajoutés à votre espace existant.</p>
+</div>
+<div class="mailbox" id="mailIn" hidden>
+<h2>Mon adresse e-mail</h2>
+<p>Connecté avec <b id="mailShown"></b>. Vos crédits et vos conversations vous suivent sur tous vos appareils.</p>
+<label class="check"><input type="checkbox" id="mkCk"> Recevoir de temps en temps des nouvelles de Sereina (rappels, nouveaux guides).</label>
+<div class="acts"><button class="ghost" id="logoutBtn" type="button">Me déconnecter de cet appareil</button></div>
+</div>
 <dl class="kv" id="account">
   <dt>Crédits disponibles</dt><dd id="accCredits">Chargement…</dd>
   <dt>Échanges gratuits</dt><dd id="accFree"></dd>
@@ -531,7 +755,7 @@ def render_pages():
   <div class="modal-acts"><button class="btn danger" id="deleteOk" type="button">Oui, tout supprimer</button><button class="ghost" id="deleteNo" type="button">Annuler</button></div>
 </div></div>
 <script src="/static/account.js" defer></script>"""
-    write("/mon-compte/", layout("Mon compte | Sereina", "Vos crédits, vos achats, la recharge automatique et la suppression de vos données.", body, "/mon-compte/", one_col=True, noindex=True))
+    write("/mon-compte/", layout("Mon compte | Sereina", "Vos crédits, vos achats, la recharge automatique et la suppression de vos données.", body, "/mon-compte/", nav_on="compte", one_col=True, noindex=True), track=False)
 
     # Contact
     body = """
@@ -574,17 +798,24 @@ def render_pages():
 <p>Le responsable du traitement est [Raison sociale], [adresse]. Contact pour vos données : [e-mail du DPO ou du responsable].</p>
 <h2>Ce que nous collectons</h2>
 <p>Lorsque vous utilisez le chat : le contenu de vos messages et des réponses, l'accompagnant choisi, la date et l'heure, un identifiant technique stocké dans un cookie sur votre appareil, votre adresse IP et le type de navigateur. Si vous les donnez vous-même pendant une conversation, un prénom, un numéro de téléphone ou une ville. Lorsque vous achetez des crédits : les informations de paiement sont collectées et conservées par Stripe, pas par nous ; nous ne recevons qu'un identifiant client, un identifiant de moyen de paiement (pour la recharge automatique, si vous l'avez activée) et la confirmation du paiement. Lorsque vous nous écrivez via le formulaire de contact : votre e-mail et votre message.</p>
+<p>Si vous ajoutez votre adresse e-mail à votre compte : cette adresse, la date de vérification, et votre choix de recevoir ou non des nouvelles. Les codes de connexion ne sont jamais stockés en clair et expirent au bout de dix minutes.</p>
+<p>Pour éviter qu'une même personne utilise plusieurs fois l'essai gratuit : une empreinte technique de votre appareil (calculée à partir de caractéristiques du navigateur et de l'écran), votre adresse IP et, le cas échéant, votre adresse e-mail. Ces trois éléments sont conservés uniquement sous forme d'empreintes chiffrées irréversibles (hachage), pendant 180 jours au plus, et ne servent à rien d'autre.</p>
+<p>Pour suivre nos coûts : pour chaque réponse, le nombre de mots traités et le coût facturé par notre prestataire d'IA. Ce suivi ne contient jamais le texte de vos messages.</p>
 <h2>Pourquoi</h2>
-<p>Pour faire fonctionner le chat et vous répondre ; pour évaluer, à chaque message, si vous pourriez être en danger et, le cas échéant, prévenir un membre de notre équipe afin qu'il vous propose de l'aide (intérêt vital) ; pour gérer la période gratuite, les crédits et les achats ; pour répondre à vos demandes ; pour assurer la sécurité du service.</p>
+<p>Pour faire fonctionner le chat et vous répondre ; pour vous permettre de retrouver votre espace sur plusieurs appareils si vous avez ajouté votre e-mail ; pour évaluer, à chaque message, si vous pourriez être en danger et, le cas échéant, prévenir un membre de notre équipe afin qu'il vous propose de l'aide (intérêt vital) ; pour gérer la période gratuite (et éviter qu'elle soit utilisée plusieurs fois par la même personne, intérêt légitime), les crédits et les achats ; pour répondre à vos demandes ; pour assurer la sécurité du service.</p>
+<p>Si une conversation laisse penser que vous êtes en danger alors que vous n'avez plus de crédit, l'accompagnant vous répond quand même et notre équipe est prévenue : la sécurité passe avant le paiement.</p>
 <p>Vos messages peuvent révéler des informations sur votre santé. Nous les traitons uniquement avec votre consentement explicite, demandé avant votre premier message, que vous pouvez retirer à tout moment en supprimant vos données.</p>
+<h2 id="lettre">E-mails, lettre et guides</h2>
+<p>E-mails liés à votre compte, toujours envoyés si vous avez donné votre adresse : code de connexion, message de bienvenue, reçu d'achat, crédits presque épuisés, échec d'une recharge automatique. E-mails de suivi (un message si vous n'êtes pas revenu depuis une semaine, des nouvelles si vous n'êtes pas revenu depuis un mois) : uniquement si vous avez coché la case correspondante, jamais pendant une période où notre équipe suit une situation d'alerte vous concernant, et jamais entre 20 h et 9 h.</p>
+<p>Lettre et guides : si vous demandez un guide, nous vous envoyons d'abord un lien de confirmation ; sans clic sur ce lien, votre adresse n'est pas inscrite. Vous recevez ensuite la lettre une à deux fois par mois. Les objets de nos e-mails restent volontairement neutres, pour que personne d'autre que vous ne devine le sujet de vos conversations. Chaque e-mail non indispensable contient un lien de désinscription en un clic.</p>
 <h2>Qui y a accès</h2>
-<p>Notre prestataire d'intelligence artificielle (Anthropic), qui génère les réponses et l'évaluation de risque à partir du texte que nous lui transmettons ; notre hébergeur ; Stripe pour les paiements ; les membres habilités de notre équipe, uniquement pour les situations d'alerte et le support. Nous ne vendons jamais vos données et ne les utilisons pas pour de la publicité.</p>
+<p>Notre prestataire d'intelligence artificielle (Anthropic), qui génère les réponses et l'évaluation de risque à partir du texte que nous lui transmettons ; notre hébergeur ; Stripe pour les paiements ; notre prestataire d'envoi d'e-mails [nom du prestataire] ; les membres habilités de notre équipe, uniquement pour les situations d'alerte et le support. Nous ne vendons jamais vos données et ne les utilisons pas pour de la publicité.</p>
 <h2>Combien de temps</h2>
-<p>Les conversations sont supprimées automatiquement après {RETENTION_DAYS} jours. Les données liées aux achats sont conservées le temps de la relation contractuelle, puis selon les obligations comptables. Vous pouvez supprimer vos conversations à tout moment depuis <a href="/mon-compte/">Mon compte</a>.</p>
+<p>Les conversations sont supprimées automatiquement après {RETENTION_DAYS} jours. Les données liées aux achats sont conservées le temps de la relation contractuelle, puis selon les obligations comptables. Les abonnés à la lettre restent inscrits jusqu'à leur désinscription. Les comptes sans activité depuis trois ans sont supprimés. Vous pouvez supprimer vos conversations, votre compte et votre inscription à la lettre à tout moment depuis <a href="/mon-compte/">Mon compte</a>.</p>
 <h2>Vos droits</h2>
 <p>Accès, rectification, suppression, limitation, opposition, portabilité, et retrait du consentement : écrivez-nous via la <a href="/contact/">page contact</a> ou à [e-mail]. Vous pouvez aussi saisir la CNIL.</p>
 <h2>Cookies</h2>
-<p>Nous utilisons un seul cookie, strictement nécessaire, pour reconnaître votre appareil entre deux messages. Aucun cookie publicitaire, aucun traceur tiers. Votre préférence de taille de texte est mémorisée localement dans votre navigateur.</p>
+<p>Nous utilisons un seul cookie, strictement nécessaire, pour reconnaître votre appareil entre deux messages et, si vous vous êtes connecté, votre compte. Aucun cookie publicitaire, aucun traceur tiers. Votre préférence de taille de texte, votre accord avant la première conversation et votre choix concernant l'installation de l'application sont mémorisés localement dans votre navigateur. Si vous installez l'application, une copie des pages publiques est gardée sur votre appareil pour l'affichage hors ligne ; vos conversations n'y sont jamais copiées.</p>
 </div>
 </section>"""
     write("/confidentialite/", layout("Politique de confidentialité | Sereina", "Ce que Sereina fait de vos données : messages, évaluation de risque, crédits, durée de conservation, vos droits.", body, "/confidentialite/", one_col=True))
@@ -598,9 +829,11 @@ def render_pages():
 <h2>Le service</h2>
 <p>Sereina est un espace d'écoute en ligne édité par [Raison sociale]. Les accompagnants sont des programmes d'intelligence artificielle. Le service ne constitue pas un acte médical, ne pose aucun diagnostic, ne prescrit aucun traitement et ne remplace pas une consultation auprès d'un professionnel de santé. En cas d'urgence, l'utilisateur doit contacter le 15, le 112 ou le 3114.</p>
 <h2>Accès</h2>
-<p>Le service est réservé aux personnes majeures. Les premiers échanges sont gratuits ({FREE_MINUTES} minutes ou {FREE_MESSAGES} messages). Au-delà, l'accès au chat nécessite des crédits.</p>
+<p>Le service est réservé aux personnes majeures. Les premiers échanges sont gratuits ({FREE_MINUTES} minutes ou {FREE_MESSAGES} messages). Au-delà, l'accès au chat nécessite des crédits. L'essai gratuit est limité à un par personne : Sereina peut le refuser lorsqu'il a déjà été utilisé depuis le même appareil, la même adresse e-mail ou, au-delà de quelques essais, la même connexion internet. Les adresses e-mail jetables ne sont pas acceptées.</p>
+<h2>Compte</h2>
+<p>L'utilisateur peut rattacher son espace à une adresse e-mail. La connexion se fait par un code à usage unique envoyé à cette adresse. L'utilisateur est responsable de l'accès à sa messagerie. S'il se connecte sur un nouvel appareil, les crédits et conversations de cet appareil sont ajoutés à son compte.</p>
 <h2>Crédits et paiement</h2>
-<p>Au-delà de l'essai gratuit, l'accès au chat se fait par crédits : un crédit est consommé par message envoyé à un accompagnant. Les crédits s'achètent par packs dont les prix, toutes taxes comprises, sont affichés sur la page « Tarifs » et avant tout paiement. Le paiement est réalisé par carte bancaire via Stripe. Les crédits n'ont pas de date d'expiration tant que le compte existe ; ils sont perdus si l'utilisateur supprime ses données.</p>
+<p>Au-delà de l'essai gratuit, l'accès au chat se fait par crédits : un crédit est consommé par message envoyé à un accompagnant. Les crédits s'achètent par packs dont les prix, toutes taxes comprises, sont affichés sur la page « Tarifs » et avant tout paiement. Le paiement est réalisé par carte bancaire via Stripe. Les crédits n'ont pas de date d'expiration tant que le compte existe ; ils sont perdus si l'utilisateur supprime ses données, ou s'il perd l'accès à un espace qu'il n'a pas rattaché à une adresse e-mail.</p>
 <p>Recharge automatique : si l'utilisateur l'a activée (case cochée lors de l'achat, modifiable à tout moment dans « Mon compte »), le même pack est racheté automatiquement avec la carte enregistrée lorsque les crédits sont épuisés, et un reçu est envoyé par Stripe. L'utilisateur peut désactiver cette option à tout moment ; aucun prélèvement n'a lieu après désactivation.</p>
 <p>Droit de rétractation : les crédits non utilisés peuvent être remboursés sur demande dans les quatorze jours suivant l'achat, au prorata des crédits restants. [À confirmer par votre conseil.]</p>
 <h2>Bon usage</h2>
@@ -620,21 +853,25 @@ def render_misc():
 <p><strong>Éditeur du site</strong> : [Raison sociale], [forme juridique], [capital], [adresse], [RCS], [n° TVA]. Directeur de la publication : [nom].</p>
 <p><strong>Hébergeur</strong> : [nom et adresse de l'hébergeur].</p>
 <p><strong>Nature du service</strong> : Sereina est un espace d'écoute et d'information. Les accompagnants sont des programmes d'intelligence artificielle. Le service ne constitue pas un acte médical, ne pose aucun diagnostic et ne remplace pas une consultation auprès d'un professionnel de santé. En cas d'urgence, appelez le 15 ou le 3114.</p>
-<p><strong>Données personnelles</strong> : voir la <a href="/confidentialite/">politique de confidentialité</a>. <strong>Abonnement</strong> : voir les <a href="/cgv/">conditions d'utilisation et de vente</a>.</p>
+<p><strong>Données personnelles</strong> : voir la <a href="/confidentialite/">politique de confidentialité</a>. <strong>Crédits</strong> : voir les <a href="/cgv/">conditions d'utilisation et de vente</a>.</p>
 </div></section>"""
     write("/mentions-legales/", layout("Mentions légales | Sereina", "Mentions légales et informations sur le service Sereina.", body, "/mentions-legales/", one_col=True))
     body404 = """<section><h1>Page introuvable</h1><p class="lede">Cette page n'existe pas ou a été déplacée.</p><div class="cta"><a class="btn" href="/conseils/">Voir les conseils</a></div></section>"""
     write("/404.html", layout("Page introuvable | Sereina", "Page introuvable.", body404, "/404.html", one_col=True))
 
 def render_sitemap(paths):
-    items = "".join(f"<url><loc>{esc(url(p))}</loc><lastmod>{TODAY}</lastmod></url>" for p in paths)
+    items = "".join(f"<url><loc>{esc(url(p))}</loc><lastmod>{WRITTEN.get(p, TODAY)}</lastmod></url>" for p in paths)
     write("/sitemap.xml", f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{items}</urlset>\n')
+    if INDEXNOW_KEY:
+        # Clé IndexNow (Bing, Yandex, Seznam…) : prouve que le site nous appartient. Voir indexnow.py.
+        write(f"/{INDEXNOW_KEY}.txt", INDEXNOW_KEY)
     write("/robots.txt", f"User-agent: *\nAllow: /\nDisallow: /admin/\nDisallow: /api/\nSitemap: {url('/sitemap.xml')}\n")
 
 def main():
     if os.path.isdir(DIST):
         shutil.rmtree(DIST)
     os.makedirs(DIST)
+    make_icons()
     shutil.copytree(os.path.join(ROOT, "static"), os.path.join(DIST, "static"))
     infos = [render_article(a) for a in ARTICLES]
     for tkey in THEMES:
@@ -646,9 +883,13 @@ def main():
     render_misc()
     render_pages()
     render_accompagnants(infos)
-    paths = ["/", "/conseils/", "/parler/", "/urgence/", "/abonnement/", "/accompagnants/"] + [f"/accompagnants/{k}/" for k in PROFILES] + [ "/a-propos/", "/contact/", "/confidentialite/", "/cgv/"] + [f"/conseils/{THEMES[t]['slug']}/" for t in THEMES] + [i["path"] for i in infos]
+    render_guides()
+    render_pwa()
+    paths = ["/", "/conseils/", "/parler/", "/urgence/", "/credits/", "/guides/", "/application/", "/accompagnants/"] + [f"/accompagnants/{k}/" for k in PROFILES] + ["/a-propos/", "/contact/", "/confidentialite/", "/cgv/", "/mentions-legales/"] + [f"/conseils/{THEMES[t]['slug']}/" for t in THEMES] + [i["path"] for i in infos]
     render_sitemap(paths)
     json.dump(infos, open(os.path.join(DIST, "articles.json"), "w"), ensure_ascii=False, indent=1)
+    SEO_STATE["_sitemap"] = paths
+    json.dump(SEO_STATE, open(SEO_STATE_FILE, "w"), ensure_ascii=False, indent=0)
     print(f"{len(infos)} articles, {len(paths)} URL, mots au total : {sum(i['words'] for i in infos)}, liens internes automatiques : {sum(i['autolinks'] for i in infos)}")
 
 if __name__ == "__main__":

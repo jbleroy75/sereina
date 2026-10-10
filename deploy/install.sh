@@ -9,8 +9,8 @@ curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' > /etc/
 apt-get update && apt-get install -y caddy
 id -u sereina &>/dev/null || useradd -r -m -d /opt/sereina -s /usr/sbin/nologin sereina
 SRC="$(cd "$(dirname "$0")/.." && pwd)"
-rsync -a --delete --exclude node_modules --exclude data "$SRC/" /opt/sereina/
-cd /opt/sereina && pip3 install --break-system-packages markdown pyyaml && python3 build.py --site-url "https://$DOMAIN"
+rsync -a --delete --exclude node_modules --exclude data --exclude .seo-state.json --exclude server/.env "$SRC/" /opt/sereina/
+cd /opt/sereina && pip3 install --break-system-packages markdown pyyaml reportlab pillow && python3 build.py --site-url "https://$DOMAIN" && python3 build_guides.py
 cd /opt/sereina/server && npm install --omit=dev
 [ -f .env ] || { cp .env.example .env; echo ">>> Remplissez /opt/sereina/server/.env puis : systemctl restart sereina"; }
 chown -R sereina:sereina /opt/sereina

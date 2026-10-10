@@ -8,7 +8,11 @@ import { encryptSecret, decryptSecret, generateTOTPSecret, totpUri, verifyTOTPCo
 import { clientIp } from "./security/ratelimit.js";
 import { stripHtml, sanitizeEmail } from "./security/headers.js";
 import { listGuides, getPrompt, savePrompt, resetPrompt, promptHistory, restoreVersion, systemPrompt, guideExists, COMMON_KEY } from "./prompts.js";
-import { streamReply } from "./ai.js";
+import { streamReply, MODEL_CHAT, MODEL_RISK } from "./ai.js";
+import { USD_EUR, priceFor } from "./costs.js";
+import { runCanary, lastRuns } from "./canary.js";
+import { runLifecycle } from "./lifecycle.js";
+import * as NL from "./newsletter.js";
 
 const LEVELS = ["vert", "jaune", "orange", "rouge"];
 const COLORS = { vert: "#2e7d4f", jaune: "#b8860b", orange: "#d2691e", rouge: "#b22222" };
@@ -71,13 +75,21 @@ dt{color:var(--muted)}
 .login{max-width:420px;margin:60px auto;display:grid;gap:14px}.login label{display:grid;gap:4px}.login input{min-height:44px}
 .err{background:var(--alert-bg);color:var(--alert-fg);border:1px solid var(--alert-line);padding:10px 14px}
 .ok{background:var(--mist);padding:10px 14px}
+.wrap h2{margin:32px 0 8px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:0;margin:16px 0 24px;border-top:1px solid var(--line);border-left:1px solid var(--line)}
+.kpis div{padding:12px 14px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--paper)}
+.kpis b{display:block;font-size:22px;font-variant-numeric:tabular-nums}.kpis span{color:var(--muted);font-size:12.5px}
+.good{color:#2e7d4f}.bad{color:#b22222}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.bar{display:inline-block;height:10px;background:var(--steel);vertical-align:middle}.bar.cost{background:#d2691e}
+.tabs a{margin-right:12px}.tabs a.on{font-weight:600;text-decoration:none}
 .prompt-ed textarea{width:100%;max-width:900px;font-family:ui-monospace,Menlo,monospace;font-size:14px;line-height:1.5}
 .prompt-ed label{display:grid;gap:6px;margin:16px 0}.prompt-ed .help{color:var(--muted);font-size:13px}
 pre.full{white-space:pre-wrap;background:var(--mist);padding:14px;max-width:900px;font-size:13px;max-height:420px;overflow:auto}
 .reply{background:var(--paper);border-left:3px solid var(--steel);padding:12px 16px;max-width:900px;white-space:pre-wrap;font-family:var(--body);font-size:16px}
 code.codes{display:block;white-space:pre;font-size:16px;line-height:1.7;padding:12px;background:var(--mist);margin:10px 0;max-width:320px}
 </style></head><body><div class="wrap">
-${req?.admin && !req.admin.pending_2fa ? `<p class="nav"><a href="/admin/">Utilisateurs</a> · <a href="/admin/alertes">Alertes ouvertes</a>${A.hasRole(req.admin, "admin") ? ' · <a href="/admin/accompagnants">Accompagnants</a> · <a href="/admin/journal">Journal</a>' : ""}${A.hasRole(req.admin, "owner") ? ' · <a href="/admin/equipe">Équipe</a>' : ""} · <a href="/admin/securite">Mon compte</a> · <a href="/">Site</a> <span class="who">${esc(req.admin.name || req.admin.email)} (${ROLE_LABEL[req.admin.role] || req.admin.role})</span> <form method="post" action="/admin/logout" class="out"><button class="ghost" type="submit">Déconnexion</button></form></p>` : ""}
+${req?.admin && !req.admin.pending_2fa ? `<p class="nav"><a href="/admin/">Utilisateurs</a> · <a href="/admin/alertes">Alertes ouvertes</a>${A.hasRole(req.admin, "admin") ? ' · <a href="/admin/finances">Revenus et coûts</a> · <a href="/admin/newsletter">Newsletter</a> · <a href="/admin/accompagnants">Accompagnants</a> · <a href="/admin/journal">Journal</a>' : ""}${A.hasRole(req.admin, "owner") ? ' · <a href="/admin/equipe">Équipe</a>' : ""} · <a href="/admin/securite">Mon compte</a> · <a href="/">Site</a> <span class="who">${esc(req.admin.name || req.admin.email)} (${ROLE_LABEL[req.admin.role] || req.admin.role})</span> <form method="post" action="/admin/logout" class="out"><button class="ghost" type="submit">Déconnexion</button></form></p>` : ""}
 ${body}</div></body></html>`;
 }
 
@@ -139,7 +151,9 @@ admin.get("/u/:id", (req, res) => {
 <h1>${esc(u.first_name || "Anonyme")} <small style="color:var(--muted)">${u.id}</small></h1>
 <p>${chip(u.risk_level, !!u.handled_at)} ${esc(u.risk_reason || "")} ${u.risk_updated_at ? "· " + fmt(u.risk_updated_at) : ""}</p>
 ${proto}
-<dl><dt>Téléphone</dt><dd>${esc(u.phone || "inconnu")}</dd><dt>Ville</dt><dd>${esc(u.city || "inconnue")}</dd><dt>E-mail</dt><dd>${esc(u.email || "inconnu")}</dd>
+<dl><dt>Téléphone</dt><dd>${esc(u.phone || "inconnu")}</dd><dt>Ville</dt><dd>${esc(u.city || "inconnue")}</dd><dt>E-mail</dt><dd>${esc(u.email || "inconnu")}${u.email ? (u.email_verified_at ? " · vérifié" : " · non vérifié (saisi au paiement)") : ""}${u.marketing_optin ? " · accepte les relances" : ""}</dd>
+<dt>Essai gratuit</dt><dd>${u.trial_denied ? "refusé (déjà utilisé sur cet appareil, ce réseau ou cet e-mail)" : u.free_started_at ? `commencé le ${fmt(u.free_started_at)}, ${u.free_messages} message(s)` : "pas commencé"}</dd>
+<dt>Coût IA</dt><dd>${(() => { const c = db.prepare("SELECT COUNT(*) n, COALESCE(SUM(cost_usd),0) usd FROM ai_usage WHERE user_id = ?").get(u.id); return `${c.n} appel(s), ${(c.usd * USD_EUR).toFixed(3).replace(".", ",")} €`; })()}</dd>
 <dt>Crédits</dt><dd>${u.credits} · recharge automatique : ${u.auto_recharge ? "oui (" + esc(u.auto_pack || "") + ")" : "non"}${u.stripe_customer_id ? ` · <a href="https://dashboard.stripe.com/customers/${esc(u.stripe_customer_id)}">Stripe</a>` : ""}</dd>
 <dt>Achats</dt><dd>${q.purchases.all(u.id).map(p => `${fmt(p.created_at)} : ${esc(p.pack)}, ${p.credits} crédits, ${(p.amount_cents/100).toFixed(2).replace(".", ",")} € (${p.kind === "auto" ? "recharge auto" : "achat"})`).join("<br>") || "aucun"}</dd>
 <dt>Première visite</dt><dd>${fmt(u.created_at)}</dd><dt>Dernière activité</dt><dd>${fmt(u.last_seen)}</dd>
@@ -389,9 +403,119 @@ admin.post("/accompagnants/:key/tester", need("admin"), async (req, res) => {
   recent.push(t); testTries.set(k, recent);
   const msg = String(req.body.message || "").slice(0, 2000);
   let reply = "";
-  try { reply = await streamReply(key, [{ role: "user", content: msg }], d => {}, undefined); }
+  try { reply = await streamReply(key, [{ role: "user", content: msg }], d => {}, undefined, undefined, { kind: "test" }); }
   catch (e) { reply = "Erreur : " + (e.message || e); }
   res.send(editorPage(req, key, `<h2>Réponse de test</h2><p><b>Message :</b> ${esc(msg)}</p><div class="reply">${esc(reply)}</div>`));
+});
+
+// ---------- Revenus et coûts (repris de renta-immo : mrr-analytics, ai-cost-tracking, payment-canary) ----------
+const euro = v => (Math.abs(v || 0) < 0.005 ? 0 : v).toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
+const euro3 = v => (v || 0).toLocaleString("fr-FR", { minimumFractionDigits: 3, maximumFractionDigits: 3 }) + " €";
+admin.get("/finances", need("admin"), (req, res) => {
+  const days = [7, 30, 90, 365].includes(Number(req.query.j)) ? Number(req.query.j) : 30;
+  const since = new Date(Date.now() - days * 864e5).toISOString();
+  const rev = db.prepare("SELECT COALESCE(SUM(amount_cents),0)/100.0 AS eur, COUNT(*) n, COUNT(DISTINCT user_id) buyers, COALESCE(SUM(CASE WHEN kind='auto' THEN amount_cents END),0)/100.0 AS auto_eur, COALESCE(SUM(credits),0) credits FROM purchases WHERE created_at >= ?").get(since);
+  const cost = db.prepare(`SELECT COALESCE(SUM(cost_usd),0) usd, COUNT(*) calls,
+      COALESCE(SUM(CASE WHEN kind='chat' THEN 1 END),0) msgs,
+      COALESCE(SUM(CASE WHEN kind='chat' AND billable=1 THEN 1 END),0) paid_msgs,
+      COALESCE(SUM(CASE WHEN billable=0 AND kind!='test' THEN cost_usd END),0) free_usd,
+      COALESCE(SUM(CASE WHEN kind='test' THEN cost_usd END),0) test_usd,
+      COALESCE(SUM(mock),0) mocks
+    FROM ai_usage WHERE created_at >= ?`).get(since);
+  const costEur = cost.usd * USD_EUR, margin = rev.eur - costEur;
+  const perMsg = cost.msgs ? costEur / cost.msgs : 0;
+  const perCredit = rev.credits ? rev.eur / rev.credits : 0;
+  const daily = db.prepare(`WITH d AS (
+      SELECT substr(created_at,1,10) day, SUM(amount_cents)/100.0 rev, 0 usd, 0 msgs FROM purchases WHERE created_at >= ? GROUP BY day
+      UNION ALL SELECT substr(created_at,1,10), 0, SUM(cost_usd), SUM(CASE WHEN kind='chat' THEN 1 ELSE 0 END) FROM ai_usage WHERE created_at >= ? GROUP BY 1)
+    SELECT day, SUM(rev) rev, SUM(usd) usd, SUM(msgs) msgs FROM d GROUP BY day ORDER BY day DESC`).all(since, since);
+  const maxV = Math.max(1, ...daily.map(d => Math.max(d.rev, d.usd * USD_EUR)));
+  const byPack = db.prepare("SELECT pack, kind, COUNT(*) n, SUM(amount_cents)/100.0 eur FROM purchases WHERE created_at >= ? GROUP BY pack, kind ORDER BY eur DESC").all(since);
+  const byModel = db.prepare("SELECT model, kind, COUNT(*) n, SUM(input_tokens) i, SUM(output_tokens) o, SUM(cache_read_tokens) cr, SUM(cost_usd) usd FROM ai_usage WHERE created_at >= ? GROUP BY model, kind ORDER BY usd DESC").all(since);
+  const byGuide = db.prepare("SELECT guide, COUNT(*) n, SUM(cost_usd) usd FROM ai_usage WHERE kind='chat' AND created_at >= ? GROUP BY guide ORDER BY n DESC").all(since);
+  const runs = lastRuns(8);
+  const [pin, pout] = priceFor(MODEL_CHAT), [rin, rout] = priceFor(MODEL_RISK);
+  res.send(page("Revenus et coûts", `<h1>Revenus et coûts</h1>
+  <p class="tabs">${[7, 30, 90, 365].map(j => `<a href="?j=${j}" class="${j === days ? "on" : ""}">${j === 365 ? "12 mois" : j + " jours"}</a>`).join("")}</p>
+  ${cost.mocks ? `<p class="err">Une partie des coûts provient du mode simulé (MOCK_AI) : jetons estimés, pas facturés.</p>` : ""}
+  <div class="kpis">
+    <div><b>${euro(rev.eur)}</b><span>chiffre d'affaires TTC</span></div>
+    <div><b>${euro(costEur)}</b><span>coût IA (${cost.calls} appels)</span></div>
+    <div><b class="${margin >= 0 ? "good" : "bad"}">${euro(margin)}</b><span>marge brute après IA${rev.eur ? ` (${Math.round(margin / rev.eur * 100)} %)` : ""}</span></div>
+    <div><b>${rev.n}</b><span>achats · ${rev.buyers} acheteur(s)</span></div>
+    <div><b>${rev.eur ? Math.round(rev.auto_eur / rev.eur * 100) : 0} %</b><span>du CA en recharge auto</span></div>
+    <div><b>${euro3(perMsg)}</b><span>coût IA moyen par message</span></div>
+    <div><b>${euro3(perCredit)}</b><span>revenu moyen par crédit vendu</span></div>
+    <div><b>${cost.msgs}</b><span>messages · ${cost.paid_msgs} payés</span></div>
+    <div><b>${euro(cost.free_usd * USD_EUR)}</b><span>coût de l'essai gratuit et des réponses de sécurité</span></div>
+  </div>
+  <h2>Par jour</h2>
+  <table><thead><tr><th>Jour</th><th class="num">Revenus</th><th class="num">Coût IA</th><th class="num">Marge</th><th class="num">Messages</th><th></th></tr></thead><tbody>
+  ${daily.map(d => `<tr><td>${d.day}</td><td class="num">${euro(d.rev)}</td><td class="num">${euro(d.usd * USD_EUR)}</td><td class="num ${d.rev - d.usd * USD_EUR > -0.005 ? "good" : "bad"}">${euro(d.rev - d.usd * USD_EUR)}</td><td class="num">${d.msgs}</td>
+    <td><span class="bar" style="width:${Math.round(d.rev / maxV * 160)}px" title="revenus"></span><br><span class="bar cost" style="width:${Math.max(1, Math.round(d.usd * USD_EUR / maxV * 160))}px" title="coût IA"></span></td></tr>`).join("") || '<tr><td colspan="6">Aucune donnée sur la période.</td></tr>'}</tbody></table>
+  <h2>Ventes par pack</h2>
+  <table><thead><tr><th>Pack</th><th>Type</th><th class="num">Ventes</th><th class="num">Montant</th></tr></thead><tbody>
+  ${byPack.map(p => `<tr><td>${esc(p.pack)}</td><td>${p.kind === "auto" ? "recharge auto" : "achat"}</td><td class="num">${p.n}</td><td class="num">${euro(p.eur)}</td></tr>`).join("") || '<tr><td colspan="4">Aucune vente.</td></tr>'}</tbody></table>
+  <h2>Coûts IA par modèle</h2>
+  <p style="color:var(--muted)">Tarifs appliqués ($ par million de jetons, entrée / sortie) : conversation <b>${esc(MODEL_CHAT)}</b> ${pin} / ${pout} ; risque <b>${esc(MODEL_RISK)}</b> ${rin} / ${rout}. Conversion : 1 $ = ${String(USD_EUR).replace(".", ",")} € (variable USD_EUR). Le prompt système est mis en cache : les lectures en cache coûtent une fraction du prix d'entrée.</p>
+  <table><thead><tr><th>Modèle</th><th>Usage</th><th class="num">Appels</th><th class="num">Jetons entrée</th><th class="num">dont cache</th><th class="num">Jetons sortie</th><th class="num">Coût</th></tr></thead><tbody>
+  ${byModel.map(m => `<tr><td>${esc(m.model)}</td><td>${m.kind === "chat" ? "conversation" : m.kind === "risk" ? "détection du risque" : "tests back-office"}</td><td class="num">${m.n}</td><td class="num">${(m.i || 0).toLocaleString("fr-FR")}</td><td class="num">${(m.cr || 0).toLocaleString("fr-FR")}</td><td class="num">${(m.o || 0).toLocaleString("fr-FR")}</td><td class="num">${euro(m.usd * USD_EUR)}</td></tr>`).join("") || '<tr><td colspan="7">Aucun appel.</td></tr>'}</tbody></table>
+  <h2>Messages par accompagnant</h2>
+  <table><thead><tr><th>Accompagnant</th><th class="num">Messages</th><th class="num">Coût</th></tr></thead><tbody>${byGuide.map(g => `<tr><td>${esc(g.guide)}</td><td class="num">${g.n}</td><td class="num">${euro(g.usd * USD_EUR)}</td></tr>`).join("")}</tbody></table>
+  <h2>Contrôle des paiements</h2>
+  <p style="color:var(--muted)">Toutes les heures, les paiements réussis chez Stripe sur 24 h sont comparés aux achats enregistrés ; un paiement non crédité (webhook perdu) est crédité automatiquement et l'équipe est prévenue.</p>
+  <form method="post" action="/admin/finances/controle" class="inline">${csrf(req)}<button class="btn" type="submit">Lancer le contrôle maintenant</button></form>
+  <table><thead><tr><th>Date</th><th>Résultat</th><th class="num">Paiements vérifiés</th><th class="num">Rattrapés</th><th>Détail</th></tr></thead><tbody>
+  ${runs.map(r => `<tr><td>${fmt(r.ran_at)}</td><td>${{ ok: "tout est crédité", reconciled: "<b class='bad'>paiements rattrapés</b>", error: "<b class='bad'>erreur</b>", not_configured: "Stripe non configuré" }[r.status] || r.status}</td><td class="num">${r.checked}</td><td class="num">${r.missing}</td><td>${esc(r.detail || "")}</td></tr>`).join("") || '<tr><td colspan="5">Pas encore de contrôle.</td></tr>'}</tbody></table>
+  <h2>Relances par e-mail</h2>
+  <p style="color:var(--muted)">Lancées automatiquement toutes les heures entre 9 h et 20 h (heure de Paris), uniquement pour les personnes qui les ont acceptées.</p>
+  <form method="post" action="/admin/finances/relances" class="inline">${csrf(req)}<button class="btn" type="submit">Lancer les relances maintenant</button></form>
+  <table><thead><tr><th>E-mail</th><th class="num">30 derniers jours</th></tr></thead><tbody>${db.prepare("SELECT kind, COUNT(*) n FROM email_log WHERE sent_at >= ? GROUP BY kind ORDER BY n DESC").all(new Date(Date.now() - 30 * 864e5).toISOString()).map(r => `<tr><td>${esc({ welcome: "bienvenue", receipt: "reçu d'achat", low_credits: "crédits bas", recharge_failed: "recharge refusée", inactive_7d: "relance 7 jours", winback: "relance client parti" }[r.kind] || r.kind)}</td><td class="num">${r.n}</td></tr>`).join("") || '<tr><td colspan="2">Aucun envoi.</td></tr>'}</tbody></table>
+  ${req.query.m ? `<div class="ok">${esc(req.query.m)}</div>` : ""}`, false, req));
+});
+admin.post("/finances/controle", need("admin"), async (req, res) => {
+  const r = await runCanary();
+  A.audit("payments_check", { adminId: req.admin.admin_id, metadata: r, ip: clientIp(req) });
+  res.redirect("/admin/finances?m=" + encodeURIComponent(r.status === "not_configured" ? "Stripe n'est pas configuré." : r.status === "error" ? "Erreur : " + r.error : `${r.checked} paiement(s) vérifié(s), ${r.missing} rattrapé(s).`));
+});
+admin.post("/finances/relances", need("admin"), (req, res) => {
+  const r = runLifecycle({ force: true });
+  A.audit("lifecycle_run", { adminId: req.admin.admin_id, metadata: r, ip: clientIp(req) });
+  res.redirect("/admin/finances?m=" + encodeURIComponent(`Relances envoyées : ${r.inactive || 0} (inactivité), ${r.winback || 0} (clients partis).`));
+});
+
+// ---------- Newsletter ----------
+admin.get("/newsletter", need("admin"), (req, res) => {
+  const st = NL.stats(), guides = NL.listGuideFiles();
+  const title = slug => guides.find(g => g.slug === slug)?.titre || slug || "(aucun)";
+  res.send(page("Newsletter", `<h1>Newsletter et guides</h1>
+  ${req.query.m ? `<div class="ok">${esc(req.query.m)}</div>` : ""}
+  <div class="kpis"><div><b>${st.active}</b><span>abonnés confirmés</span></div><div><b>${st.pending}</b><span>en attente de confirmation</span></div><div><b>${st.unsubscribed}</b><span>désinscrits</span></div><div><b>${guides.length}</b><span>guides disponibles</span></div></div>
+  <h2>Guides demandés</h2><table><tbody>${st.byGuide.map(g => `<tr><td>${esc(title(g.guide))}</td><td class="num">${g.n}</td></tr>`).join("") || "<tr><td>Aucun.</td></tr>"}</tbody></table>
+  <h2>Provenance</h2><table><tbody>${st.bySource.map(g => `<tr><td>${esc(g.source || "(inconnue)")}</td><td class="num">${g.n}</td></tr>`).join("") || "<tr><td>Aucune.</td></tr>"}</tbody></table>
+  <h2>Envoyer une lettre</h2>
+  <form method="post" action="/admin/newsletter/envoyer" class="prompt-ed">${csrf(req)}
+    <label><b>Objet</b><input name="subject" required maxlength="120" style="max-width:900px"></label>
+    <label><b>Texte</b><span class="help">Texte simple. Le lien de désinscription et le rappel des numéros d'urgence sont ajoutés automatiquement à la fin.</span><textarea name="body" rows="12" required></textarea></label>
+    <label class="check" style="display:flex;gap:8px"><input type="checkbox" name="confirm" required> Envoyer à ${st.active} abonné(s) confirmé(s)</label>
+    <button class="btn" type="submit">Envoyer</button></form>
+  <h2>Lettres envoyées</h2><table><thead><tr><th>Date</th><th>Objet</th><th class="num">Destinataires</th><th>Par</th></tr></thead><tbody>${NL.campaigns().map(c => `<tr><td>${fmt(c.sent_at)}</td><td>${esc(c.subject)}</td><td class="num">${c.recipients}</td><td>${esc(c.sent_by || "")}</td></tr>`).join("") || '<tr><td colspan="4">Aucune.</td></tr>'}</tbody></table>
+  <h2>Derniers inscrits</h2><p><a href="/admin/newsletter/export.csv">Exporter tous les abonnés (CSV)</a></p>
+  <table><thead><tr><th>E-mail</th><th>Statut</th><th>Guide</th><th>Provenance</th><th>Inscription</th></tr></thead><tbody>${NL.latest(200).map(n => `<tr><td>${esc(n.email)}</td><td>${{ active: "confirmé", pending: "en attente", unsubscribed: "désinscrit" }[n.status]}</td><td>${esc(title(n.guide))}</td><td>${esc(n.source || "")}</td><td>${fmt(n.created_at)}</td></tr>`).join("")}</tbody></table>`, false, req));
+});
+admin.post("/newsletter/envoyer", need("admin"), (req, res) => {
+  const subject = stripHtml(req.body.subject).slice(0, 120), body = String(req.body.body || "").slice(0, 20000).trim();
+  if (!subject || !body || !req.body.confirm) return res.redirect("/admin/newsletter?m=" + encodeURIComponent("Objet, texte et confirmation requis."));
+  const n = NL.sendCampaign(subject, body, req.admin.name || req.admin.email);
+  A.audit("newsletter_sent", { adminId: req.admin.admin_id, target: subject, metadata: { recipients: n }, ip: clientIp(req) });
+  res.redirect("/admin/newsletter?m=" + encodeURIComponent(`Lettre mise en file pour ${n} abonné(s).`));
+});
+admin.get("/newsletter/export.csv", need("admin"), (req, res) => {
+  const rows = NL.allForExport(), cell = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  A.audit("newsletter_exported", { adminId: req.admin.admin_id, metadata: { rows: rows.length }, ip: clientIp(req) });
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
+  res.setHeader("Content-Disposition", "attachment; filename=sereina-newsletter.csv");
+  res.send("\ufeff" + ["email;statut;provenance;guide;inscription;confirmation;desinscription", ...rows.map(r => [r.email, r.status, r.source, r.guide, r.created_at, r.confirmed_at, r.unsubscribed_at].map(cell).join(";"))].join("\n"));
 });
 
 // ---------- Journal d'audit ----------
