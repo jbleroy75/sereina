@@ -1,0 +1,17 @@
+# Secrets et données
+.env
+server/.env
+server/data/
+*.db
+*.db-wal
+*.db-shm
+
+# Dépendances et artefacts
+node_modules/
+dist/
+__pycache__/
+*.pyc
+
+# Système
+.DS_Store
+*.log

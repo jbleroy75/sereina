@@ -1,0 +1,8 @@
+# Remplacez le domaine. Caddy obtient et renouvelle le certificat HTTPS tout seul.
+www.votre-domaine.fr {
+	encode gzip
+	reverse_proxy localhost:3000
+}
+votre-domaine.fr {
+	redir https://www.votre-domaine.fr{uri} permanent
+}

@@ -1,0 +1,17 @@
+# /etc/systemd/system/sereina.service
+# sudo systemctl daemon-reload && sudo systemctl enable --now sereina
+[Unit]
+Description=Sereina (chat, paywall, back-office)
+After=network.target
+
+[Service]
+Type=simple
+User=sereina
+WorkingDirectory=/opt/sereina/server
+EnvironmentFile=/opt/sereina/server/.env
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

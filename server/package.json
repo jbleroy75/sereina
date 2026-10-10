@@ -1,0 +1,22 @@
+{
+  "name": "sereina-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Serveur Sereina : chat accompagnants IA, paywall Stripe, détection de risque, back-office",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "MOCK_AI=1 node server.js"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.52.0",
+    "better-sqlite3": "^11.5.0",
+    "cookie-parser": "^1.4.7",
+    "express": "^4.21.2",
+    "nodemailer": "^6.9.16",
+    "qrcode": "^1.5.4",
+    "stripe": "^17.5.0"
+  }
+}

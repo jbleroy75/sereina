@@ -1,0 +1,754 @@
+{
+  "themes": {
+    "anxiete": {
+      "name": "Anxiété et stress",
+      "slug": "anxiete-stress",
+      "guide": "Clara",
+      "intro": "Comprendre l'anxiété, les crises d'angoisse et le stress du quotidien, et trouver des façons concrètes de les apaiser."
+    },
+    "sommeil": {
+      "name": "Sommeil et fatigue",
+      "slug": "sommeil",
+      "guide": "Samuel",
+      "intro": "Retrouver des nuits correctes : insomnie, réveils nocturnes, fatigue qui s'installe, routines du soir."
+    },
+    "travail": {
+      "name": "Travail et épuisement",
+      "slug": "travail-burn-out",
+      "guide": "Théo",
+      "intro": "Burn-out, surcharge, perte de sens, relations difficiles au travail : repérer les signaux et se protéger."
+    },
+    "couple": {
+      "name": "Couple",
+      "slug": "couple",
+      "guide": "Inès",
+      "intro": "Disputes, silence, jalousie, rupture, reconstruction : comprendre ce qui se joue à deux."
+    },
+    "famille": {
+      "name": "Famille et proches",
+      "slug": "famille",
+      "guide": "Inès",
+      "intro": "Parents vieillissants, enfants adultes, conflits de famille, charge des aidants."
+    },
+    "deuil": {
+      "name": "Deuil et séparation",
+      "slug": "deuil",
+      "guide": "Maya",
+      "intro": "Traverser la perte d'un proche, un divorce, une séparation, à son propre rythme."
+    },
+    "solitude": {
+      "name": "Solitude, retraite et âge",
+      "slug": "solitude-retraite",
+      "guide": "Jeanne",
+      "intro": "Isolement, passage à la retraite, vieillir, retrouver du lien et un sentiment d'utilité."
+    },
+    "aide": {
+      "name": "Se faire aider",
+      "slug": "se-faire-aider",
+      "guide": "Clara",
+      "intro": "Psychologue, psychiatre, médecin traitant, lignes d'écoute : à qui s'adresser et comment."
+    }
+  },
+  "articles": [
+    {
+      "theme": "anxiete",
+      "slug": "crise-d-angoisse-que-faire",
+      "keyword": "crise d'angoisse que faire",
+      "title": "Crise d'angoisse : que faire sur le moment et après",
+      "aliases": "crise d'angoisse|crises d'angoisse|attaque de panique|attaques de panique"
+    },
+    {
+      "theme": "anxiete",
+      "slug": "symptomes-anxiete",
+      "keyword": "symptômes de l'anxiété",
+      "title": "Symptômes de l'anxiété : les reconnaître dans le corps et dans la tête",
+      "aliases": "symptômes de l'anxiété|symptômes anxieux"
+    },
+    {
+      "theme": "anxiete",
+      "slug": "difference-stress-anxiete",
+      "keyword": "différence entre stress et anxiété",
+      "title": "Stress ou anxiété : quelle différence et pourquoi ça compte",
+      "aliases": "stress et anxiété|différence entre stress et anxiété"
+    },
+    {
+      "theme": "anxiete",
+      "slug": "anxiete-generalisee",
+      "keyword": "anxiété généralisée",
+      "title": "Anxiété généralisée : quand l'inquiétude ne s'arrête jamais",
+      "aliases": "anxiété généralisée|inquiétude permanente"
+    },
+    {
+      "theme": "anxiete",
+      "slug": "exercices-respiration-anxiete",
+      "keyword": "exercices de respiration contre l'anxiété",
+      "title": "Exercices de respiration contre l'anxiété : 5 méthodes qui marchent",
+      "aliases": "exercices de respiration|respiration lente|cohérence cardiaque"
+    },
+    {
+      "theme": "anxiete",
+      "slug": "ruminations-mentales",
+      "keyword": "ruminations mentales",
+      "title": "Ruminations mentales : comment arrêter de tourner en boucle",
+      "aliases": "ruminations|ruminer|pensées qui tournent en boucle"
+    },
+    {
+      "theme": "anxiete",
+      "slug": "anxiete-sociale",
+      "keyword": "anxiété sociale",
+      "title": "Anxiété sociale : la peur du regard des autres et comment l'apprivoiser",
+      "aliases": "anxiété sociale|peur du regard des autres|phobie sociale"
+    },
+    {
+      "theme": "anxiete",
+      "slug": "angoisse-du-matin",
+      "keyword": "angoisse du matin",
+      "title": "Angoisse du matin : pourquoi elle arrive au réveil et comment la calmer",
+      "aliases": "angoisse du matin|angoisse au réveil"
+    },
+    {
+      "theme": "anxiete",
+      "slug": "angoisse-du-soir",
+      "keyword": "angoisse le soir",
+      "title": "Angoisse le soir : comprendre la montée d'anxiété avant la nuit",
+      "aliases": "angoisse du soir|angoisse le soir"
+    },
+    {
+      "theme": "anxiete",
+      "slug": "palpitations-stress",
+      "keyword": "palpitations et stress",
+      "title": "Palpitations et stress : quand le cœur s'emballe sans raison",
+      "aliases": "palpitations|cœur qui s'emballe"
+    },
+    {
+      "theme": "anxiete",
+      "slug": "boule-au-ventre-stress",
+      "keyword": "boule au ventre stress",
+      "title": "Boule au ventre, nœud à l'estomac : ce que le stress fait au ventre",
+      "aliases": "boule au ventre|nœud à l'estomac|maux de ventre liés au stress"
+    },
+    {
+      "theme": "anxiete",
+      "slug": "hypocondrie-peur-des-maladies",
+      "keyword": "peur des maladies hypocondrie",
+      "title": "Peur des maladies : vivre avec l'anxiété liée à la santé",
+      "aliases": "peur des maladies|hypocondrie|anxiété liée à la santé"
+    },
+    {
+      "theme": "anxiete",
+      "slug": "anxiete-de-performance",
+      "keyword": "anxiété de performance",
+      "title": "Anxiété de performance : quand la peur d'échouer paralyse",
+      "aliases": "anxiété de performance|peur d'échouer"
+    },
+    {
+      "theme": "anxiete",
+      "slug": "trouble-panique",
+      "keyword": "trouble panique",
+      "title": "Trouble panique : quand les crises d'angoisse se répètent",
+      "aliases": "trouble panique"
+    },
+    {
+      "theme": "anxiete",
+      "slug": "anxiete-et-alimentation",
+      "keyword": "anxiété et alimentation",
+      "title": "Anxiété et alimentation : ce qui aggrave, ce qui apaise",
+      "aliases": "anxiété et alimentation|alimentation et anxiété"
+    },
+    {
+      "theme": "anxiete",
+      "slug": "anxiete-apres-50-ans",
+      "keyword": "anxiété après 50 ans",
+      "title": "Anxiété après 50 ans : pourquoi elle apparaît ou revient",
+      "aliases": "anxiété après 50 ans"
+    },
+    {
+      "theme": "anxiete",
+      "slug": "gerer-le-stress-au-quotidien",
+      "keyword": "gérer le stress au quotidien",
+      "title": "Gérer le stress au quotidien : une méthode simple en 7 points",
+      "aliases": "gérer le stress|gestion du stress|stress du quotidien"
+    },
+    {
+      "theme": "anxiete",
+      "slug": "techniques-d-ancrage",
+      "keyword": "technique d'ancrage 5-4-3-2-1",
+      "title": "La technique d'ancrage 5-4-3-2-1 et d'autres façons de revenir ici",
+      "aliases": "technique d'ancrage|techniques d'ancrage|ancrage 5-4-3-2-1|exercice d'ancrage"
+    },
+    {
+      "theme": "anxiete",
+      "slug": "anxiete-et-sport",
+      "keyword": "sport contre l'anxiété",
+      "title": "Bouger contre l'anxiété : quel sport, combien, et pourquoi ça marche",
+      "aliases": "activité physique contre l'anxiété|sport contre l'anxiété|bouger contre l'anxiété"
+    },
+    {
+      "theme": "anxiete",
+      "slug": "quand-consulter-pour-anxiete",
+      "keyword": "quand consulter pour anxiété",
+      "title": "Anxiété : à quel moment consulter, et qui",
+      "aliases": "quand consulter pour l'anxiété|consulter pour son anxiété"
+    },
+    {
+      "theme": "sommeil",
+      "slug": "insomnie-causes-solutions",
+      "keyword": "insomnie causes et solutions",
+      "title": "Insomnie : les causes les plus fréquentes et ce qui aide vraiment",
+      "aliases": "insomnie|insomnies"
+    },
+    {
+      "theme": "sommeil",
+      "slug": "reveil-a-3h-du-matin",
+      "keyword": "réveil à 3h du matin",
+      "title": "Réveil à 3 h du matin : pourquoi, et comment se rendormir",
+      "aliases": "réveil à 3 h du matin|réveils à 3 heures|réveil en pleine nuit"
+    },
+    {
+      "theme": "sommeil",
+      "slug": "difficulte-a-s-endormir",
+      "keyword": "difficulté à s'endormir",
+      "title": "Difficulté à s'endormir : les erreurs du soir et les bons réflexes",
+      "aliases": "difficulté à s'endormir|difficultés à s'endormir|mal à s'endormir"
+    },
+    {
+      "theme": "sommeil",
+      "slug": "hygiene-du-sommeil",
+      "keyword": "hygiène du sommeil",
+      "title": "Hygiène du sommeil : les règles qui comptent (et celles qu'on peut oublier)",
+      "aliases": "hygiène du sommeil"
+    },
+    {
+      "theme": "sommeil",
+      "slug": "stress-et-sommeil",
+      "keyword": "stress et sommeil",
+      "title": "Stress et sommeil : sortir du cercle vicieux",
+      "aliases": "stress et sommeil|sommeil et stress"
+    },
+    {
+      "theme": "sommeil",
+      "slug": "sommeil-apres-50-ans",
+      "keyword": "sommeil après 50 ans",
+      "title": "Le sommeil après 50 ans : ce qui change et ce qui reste possible",
+      "aliases": "sommeil après 50 ans|sommeil en vieillissant"
+    },
+    {
+      "theme": "sommeil",
+      "slug": "sommeil-et-menopause",
+      "keyword": "sommeil et ménopause",
+      "title": "Ménopause et sommeil : bouffées de chaleur, réveils, fatigue",
+      "aliases": "ménopause et sommeil|sommeil et ménopause|bouffées de chaleur la nuit"
+    },
+    {
+      "theme": "sommeil",
+      "slug": "fatigue-chronique-ou-depression",
+      "keyword": "fatigue chronique ou dépression",
+      "title": "Fatigue qui ne passe pas : épuisement, dépression ou autre chose ?",
+      "aliases": "fatigue chronique|fatigue qui ne passe pas|fatigue persistante"
+    },
+    {
+      "theme": "sommeil",
+      "slug": "somniferes-dependance",
+      "keyword": "somnifères dépendance",
+      "title": "Somnifères : ce qu'il faut savoir avant d'en prendre ou d'en arrêter",
+      "aliases": "somnifères|somnifère|dépendance aux somnifères"
+    },
+    {
+      "theme": "sommeil",
+      "slug": "ecrans-et-sommeil",
+      "keyword": "écrans et sommeil",
+      "title": "Écrans et sommeil : ce que la lumière et le défilement font à vos nuits",
+      "aliases": "écrans et sommeil|écrans le soir|téléphone au lit"
+    },
+    {
+      "theme": "sommeil",
+      "slug": "sieste-bonne-ou-mauvaise-idee",
+      "keyword": "sieste bonne ou mauvaise idée",
+      "title": "La sieste : bonne ou mauvaise idée quand on dort mal la nuit ?",
+      "aliases": "sieste|siestes"
+    },
+    {
+      "theme": "sommeil",
+      "slug": "cauchemars-adulte",
+      "keyword": "cauchemars chez l'adulte",
+      "title": "Cauchemars à l'âge adulte : d'où ils viennent et comment les réduire",
+      "aliases": "cauchemars|cauchemar"
+    },
+    {
+      "theme": "sommeil",
+      "slug": "routine-du-soir-pour-bien-dormir",
+      "keyword": "routine du soir pour bien dormir",
+      "title": "Une routine du soir pour bien dormir, réaliste et sans gadgets",
+      "aliases": "routine du soir|rituel du soir|routine du coucher"
+    },
+    {
+      "theme": "sommeil",
+      "slug": "therapie-cognitive-insomnie",
+      "keyword": "TCC insomnie",
+      "title": "La thérapie cognitive et comportementale de l'insomnie, expliquée simplement",
+      "aliases": "thérapie cognitive et comportementale de l'insomnie|TCC de l'insomnie|TCC insomnie"
+    },
+    {
+      "theme": "sommeil",
+      "slug": "se-rendormir-apres-un-reveil",
+      "keyword": "se rendormir après un réveil nocturne",
+      "title": "Se rendormir après un réveil nocturne : ce qu'il faut faire, et ne pas faire",
+      "aliases": "se rendormir|réveil nocturne|réveils nocturnes"
+    },
+    {
+      "theme": "travail",
+      "slug": "burn-out-symptomes",
+      "keyword": "burn-out symptômes",
+      "title": "Burn-out : les symptômes qui doivent alerter",
+      "aliases": "symptômes du burn-out|signes du burn-out|burn-out"
+    },
+    {
+      "theme": "travail",
+      "slug": "burn-out-ou-depression",
+      "keyword": "burn-out ou dépression",
+      "title": "Burn-out ou dépression : comment faire la différence",
+      "aliases": "burn-out ou dépression"
+    },
+    {
+      "theme": "travail",
+      "slug": "burn-out-que-faire",
+      "keyword": "burn-out que faire",
+      "title": "Burn-out : que faire, étape par étape",
+      "aliases": "que faire en cas de burn-out|sortir du burn-out"
+    },
+    {
+      "theme": "travail",
+      "slug": "arret-de-travail-burn-out",
+      "keyword": "arrêt de travail burn-out",
+      "title": "Arrêt de travail pour burn-out : comment ça se passe",
+      "aliases": "arrêt de travail|arrêt maladie"
+    },
+    {
+      "theme": "travail",
+      "slug": "reprendre-le-travail-apres-un-burn-out",
+      "keyword": "reprendre le travail après un burn-out",
+      "title": "Reprendre le travail après un burn-out sans rechuter",
+      "aliases": "reprise du travail|reprendre le travail|retour au travail"
+    },
+    {
+      "theme": "travail",
+      "slug": "charge-mentale-au-travail",
+      "keyword": "charge mentale au travail",
+      "title": "Charge mentale au travail : la reconnaître et l'alléger",
+      "aliases": "charge mentale au travail|surcharge de travail"
+    },
+    {
+      "theme": "travail",
+      "slug": "perte-de-sens-au-travail",
+      "keyword": "perte de sens au travail",
+      "title": "Perte de sens au travail : quand le métier ne veut plus rien dire",
+      "aliases": "perte de sens|perte de sens au travail"
+    },
+    {
+      "theme": "travail",
+      "slug": "harcelement-moral-au-travail",
+      "keyword": "harcèlement moral au travail",
+      "title": "Harcèlement moral au travail : le reconnaître et se protéger",
+      "aliases": "harcèlement moral|harcèlement au travail"
+    },
+    {
+      "theme": "travail",
+      "slug": "peur-du-dimanche-soir",
+      "keyword": "angoisse du dimanche soir",
+      "title": "L'angoisse du dimanche soir : pourquoi elle revient et comment la désamorcer",
+      "aliases": "angoisse du dimanche soir|dimanche soir|peur du lundi"
+    },
+    {
+      "theme": "travail",
+      "slug": "dire-non-au-travail",
+      "keyword": "apprendre à dire non au travail",
+      "title": "Apprendre à dire non au travail sans se mettre en danger",
+      "aliases": "dire non au travail|apprendre à dire non|poser des limites au travail"
+    },
+    {
+      "theme": "travail",
+      "slug": "bore-out-ennui-au-travail",
+      "keyword": "bore-out",
+      "title": "Bore-out : quand l'ennui au travail épuise autant que la surcharge",
+      "aliases": "bore-out|ennui au travail"
+    },
+    {
+      "theme": "travail",
+      "slug": "parler-de-son-mal-etre-a-son-manager",
+      "keyword": "parler de son mal-être à son manager",
+      "title": "Parler de son mal-être à son responsable : quoi dire, comment, à qui",
+      "aliases": "parler à son responsable|parler à son manager|en parler à son responsable"
+    },
+    {
+      "theme": "travail",
+      "slug": "medecin-du-travail-role",
+      "keyword": "médecin du travail rôle",
+      "title": "Médecin du travail : ce qu'il peut faire pour vous (et ce qu'il ne fera pas)",
+      "aliases": "médecin du travail|médecine du travail"
+    },
+    {
+      "theme": "travail",
+      "slug": "teletravail-isolement",
+      "keyword": "télétravail isolement",
+      "title": "Télétravail et isolement : garder le lien et la limite",
+      "aliases": "télétravail|isolement en télétravail"
+    },
+    {
+      "theme": "travail",
+      "slug": "stress-chef-d-entreprise-independant",
+      "keyword": "stress chef d'entreprise",
+      "title": "Indépendants et chefs d'entreprise : le stress dont on ne parle pas",
+      "aliases": "indépendants|chef d'entreprise|chefs d'entreprise|travailleurs indépendants"
+    },
+    {
+      "theme": "couple",
+      "slug": "disputes-de-couple-repetitives",
+      "keyword": "disputes de couple répétitives",
+      "title": "Disputes de couple à répétition : sortir du même scénario",
+      "aliases": "disputes de couple|disputes à répétition|disputes qui reviennent"
+    },
+    {
+      "theme": "couple",
+      "slug": "communication-dans-le-couple",
+      "keyword": "communication dans le couple",
+      "title": "Mieux communiquer dans le couple : des outils concrets",
+      "aliases": "communication dans le couple|mieux communiquer dans le couple|communiquer dans le couple"
+    },
+    {
+      "theme": "couple",
+      "slug": "couple-apres-la-retraite",
+      "keyword": "couple après la retraite",
+      "title": "Le couple après la retraite : réapprendre à vivre ensemble toute la journée",
+      "aliases": "couple après la retraite|couple à la retraite"
+    },
+    {
+      "theme": "couple",
+      "slug": "se-sentir-seul-en-couple",
+      "keyword": "se sentir seul en couple",
+      "title": "Se sentir seul en couple : ce que ça dit et comment en parler",
+      "aliases": "se sentir seul en couple|solitude dans le couple|seul en couple"
+    },
+    {
+      "theme": "couple",
+      "slug": "jalousie-dans-le-couple",
+      "keyword": "jalousie dans le couple",
+      "title": "Jalousie dans le couple : d'où elle vient et comment la calmer",
+      "aliases": "jalousie|jaloux|jalouse"
+    },
+    {
+      "theme": "couple",
+      "slug": "infidelite-reconstruire-la-confiance",
+      "keyword": "infidélité reconstruire la confiance",
+      "title": "Après une infidélité : peut-on reconstruire la confiance ?",
+      "aliases": "infidélité|après une infidélité|reconstruire la confiance"
+    },
+    {
+      "theme": "couple",
+      "slug": "rupture-amoureuse-apres-40-ans",
+      "keyword": "rupture amoureuse après 40 ans",
+      "title": "Rupture amoureuse après 40 ans : se reconstruire sans tout recommencer",
+      "aliases": "rupture amoureuse|rupture après 40 ans"
+    },
+    {
+      "theme": "couple",
+      "slug": "divorce-se-reconstruire",
+      "keyword": "divorce se reconstruire",
+      "title": "Se reconstruire après un divorce : les étapes, sans précipitation",
+      "aliases": "divorce|se reconstruire après un divorce|après un divorce"
+    },
+    {
+      "theme": "couple",
+      "slug": "therapie-de-couple-comment-ca-marche",
+      "keyword": "thérapie de couple comment ça marche",
+      "title": "Thérapie de couple : comment ça se passe et quand y aller",
+      "aliases": "thérapie de couple|thérapeute de couple|conseiller conjugal"
+    },
+    {
+      "theme": "couple",
+      "slug": "charge-mentale-dans-le-couple",
+      "keyword": "charge mentale dans le couple",
+      "title": "Charge mentale dans le couple : la rendre visible et la partager",
+      "aliases": "charge mentale dans le couple|charge mentale|répartition des tâches"
+    },
+    {
+      "theme": "couple",
+      "slug": "conjoint-depressif-comment-aider",
+      "keyword": "conjoint dépressif comment aider",
+      "title": "Mon conjoint est déprimé : comment l'aider sans m'épuiser",
+      "aliases": "conjoint déprimé|conjoint dépressif|aider son conjoint"
+    },
+    {
+      "theme": "couple",
+      "slug": "manque-de-desir-dans-le-couple",
+      "keyword": "manque de désir dans le couple",
+      "title": "Manque de désir dans le couple : en parler sans se blesser",
+      "aliases": "manque de désir|baisse du désir|désir dans le couple"
+    },
+    {
+      "theme": "famille",
+      "slug": "parents-vieillissants-culpabilite",
+      "keyword": "parents vieillissants culpabilité",
+      "title": "Parents vieillissants : la culpabilité de ne pas en faire assez",
+      "aliases": "parents vieillissants|parents âgés|parent âgé"
+    },
+    {
+      "theme": "famille",
+      "slug": "aidant-familial-epuisement",
+      "keyword": "aidant familial épuisement",
+      "title": "Aidant familial : reconnaître l'épuisement avant de s'effondrer",
+      "aliases": "aidant familial|aidants familiaux|épuisement de l'aidant|aidant"
+    },
+    {
+      "theme": "famille",
+      "slug": "syndrome-du-nid-vide",
+      "keyword": "syndrome du nid vide",
+      "title": "Syndrome du nid vide : quand les enfants partent",
+      "aliases": "nid vide|syndrome du nid vide|départ des enfants"
+    },
+    {
+      "theme": "famille",
+      "slug": "conflit-avec-un-enfant-adulte",
+      "keyword": "conflit avec enfant adulte",
+      "title": "Conflit avec un enfant adulte : renouer sans se renier",
+      "aliases": "enfant adulte|enfants adultes|conflit avec un enfant adulte"
+    },
+    {
+      "theme": "famille",
+      "slug": "rupture-familiale-silence",
+      "keyword": "rupture familiale",
+      "title": "Rupture familiale : vivre avec le silence d'un proche",
+      "aliases": "rupture familiale|silence d'un proche|brouille familiale"
+    },
+    {
+      "theme": "famille",
+      "slug": "parent-atteint-d-alzheimer-tenir",
+      "keyword": "parent Alzheimer comment tenir",
+      "title": "Un parent atteint d'Alzheimer : tenir, sans se perdre",
+      "aliases": "maladie d'Alzheimer|Alzheimer|parent atteint d'Alzheimer"
+    },
+    {
+      "theme": "famille",
+      "slug": "grands-parents-place-dans-la-famille",
+      "keyword": "grands-parents place dans la famille",
+      "title": "Grands-parents : trouver sa place sans s'imposer",
+      "aliases": "grands-parents|grand-parent|place des grands-parents"
+    },
+    {
+      "theme": "famille",
+      "slug": "famille-recomposee-tensions",
+      "keyword": "famille recomposée tensions",
+      "title": "Famille recomposée : apaiser les tensions du quotidien",
+      "aliases": "famille recomposée|familles recomposées"
+    },
+    {
+      "theme": "famille",
+      "slug": "fetes-de-famille-angoisse",
+      "keyword": "angoisse fêtes de famille",
+      "title": "Repas et fêtes de famille : quand on les redoute",
+      "aliases": "fêtes de famille|repas de famille"
+    },
+    {
+      "theme": "famille",
+      "slug": "placer-un-parent-en-ehpad-culpabilite",
+      "keyword": "placer un parent en EHPAD culpabilité",
+      "title": "Placer un parent en EHPAD : traverser la culpabilité",
+      "aliases": "EHPAD|maison de retraite|entrée en EHPAD"
+    },
+    {
+      "theme": "deuil",
+      "slug": "etapes-du-deuil",
+      "keyword": "étapes du deuil",
+      "title": "Les étapes du deuil : ce qui est vrai, ce qui est un mythe",
+      "aliases": "étapes du deuil|cinq étapes du deuil|phases du deuil"
+    },
+    {
+      "theme": "deuil",
+      "slug": "combien-de-temps-dure-un-deuil",
+      "keyword": "combien de temps dure un deuil",
+      "title": "Combien de temps dure un deuil ? La question que tout le monde se pose",
+      "aliases": "durée du deuil|combien de temps dure un deuil|le deuil dure"
+    },
+    {
+      "theme": "deuil",
+      "slug": "deuil-de-son-conjoint",
+      "keyword": "deuil de son conjoint",
+      "title": "Perdre son conjoint : les premiers mois, puis après",
+      "aliases": "perte de son conjoint|deuil du conjoint|perdre son conjoint|veuve|veuf"
+    },
+    {
+      "theme": "deuil",
+      "slug": "deuil-d-un-parent-adulte",
+      "keyword": "deuil d'un parent",
+      "title": "Perdre un parent à l'âge adulte : un deuil qu'on sous-estime",
+      "aliases": "deuil d'un parent|perte d'un parent|perdre un parent|mort d'un parent"
+    },
+    {
+      "theme": "deuil",
+      "slug": "deuil-complique-signes",
+      "keyword": "deuil compliqué",
+      "title": "Deuil compliqué : quand la peine ne bouge plus",
+      "aliases": "deuil compliqué|deuil prolongé|deuil qui ne passe pas"
+    },
+    {
+      "theme": "deuil",
+      "slug": "deuil-animal-de-compagnie",
+      "keyword": "deuil animal de compagnie",
+      "title": "Perdre son animal : un deuil réel, souvent moqué",
+      "aliases": "deuil d'un animal|perte de son animal|perdre son animal|mort de son chien|mort de son chat"
+    },
+    {
+      "theme": "deuil",
+      "slug": "aider-un-proche-en-deuil",
+      "keyword": "aider un proche en deuil",
+      "title": "Aider un proche en deuil : quoi dire, quoi faire, quoi éviter",
+      "aliases": "proche en deuil|aider quelqu'un en deuil|soutenir un proche en deuil"
+    },
+    {
+      "theme": "deuil",
+      "slug": "culpabilite-apres-un-deces",
+      "keyword": "culpabilité après un décès",
+      "title": "Culpabilité après un décès : « j'aurais dû »",
+      "aliases": "culpabilité après un décès|culpabilité du survivant|j'aurais dû"
+    },
+    {
+      "theme": "deuil",
+      "slug": "premier-noel-sans-lui",
+      "keyword": "premier Noël après un décès",
+      "title": "Le premier Noël, le premier anniversaire : traverser les dates sans la personne",
+      "aliases": "premier Noël|premières fêtes sans|dates anniversaires|anniversaire du décès"
+    },
+    {
+      "theme": "deuil",
+      "slug": "deuil-et-depression-difference",
+      "keyword": "deuil ou dépression",
+      "title": "Deuil ou dépression : quand la tristesse devient autre chose",
+      "aliases": "deuil ou dépression|deuil et dépression"
+    },
+    {
+      "theme": "solitude",
+      "slug": "solitude-apres-60-ans",
+      "keyword": "solitude après 60 ans",
+      "title": "Solitude après 60 ans : la comprendre et en sortir pas à pas",
+      "aliases": "solitude après 60 ans|solitude des seniors|solitude des personnes âgées"
+    },
+    {
+      "theme": "solitude",
+      "slug": "depression-de-la-retraite",
+      "keyword": "dépression de la retraite",
+      "title": "La dépression de la retraite : quand l'arrêt du travail fait tomber",
+      "aliases": "dépression de la retraite|déprime à la retraite|passage à la retraite"
+    },
+    {
+      "theme": "solitude",
+      "slug": "retrouver-un-but-a-la-retraite",
+      "keyword": "retrouver un but à la retraite",
+      "title": "Retrouver un but à la retraite : se sentir utile autrement",
+      "aliases": "but à la retraite|se sentir utile à la retraite|donner un sens à sa retraite"
+    },
+    {
+      "theme": "solitude",
+      "slug": "se-faire-des-amis-apres-50-ans",
+      "keyword": "se faire des amis après 50 ans",
+      "title": "Se faire des amis après 50 ans : c'est possible, voici comment",
+      "aliases": "se faire des amis|nouvelles amitiés|rencontrer du monde"
+    },
+    {
+      "theme": "solitude",
+      "slug": "sentiment-d-inutilite",
+      "keyword": "sentiment d'inutilité",
+      "title": "Sentiment d'inutilité : d'où il vient et comment le dépasser",
+      "aliases": "sentiment d'inutilité|se sentir inutile|sentir inutile"
+    },
+    {
+      "theme": "solitude",
+      "slug": "peur-de-vieillir",
+      "keyword": "peur de vieillir",
+      "title": "Peur de vieillir : apprivoiser le temps qui passe",
+      "aliases": "peur de vieillir|vieillir"
+    },
+    {
+      "theme": "solitude",
+      "slug": "isolement-social-signes",
+      "keyword": "isolement social signes",
+      "title": "Isolement social : les signes qu'on ne voit pas venir",
+      "aliases": "isolement social|isolement|s'isoler"
+    },
+    {
+      "theme": "solitude",
+      "slug": "veuvage-reconstruire-une-vie",
+      "keyword": "veuvage reconstruire sa vie",
+      "title": "Veuvage : reconstruire une vie quotidienne, seul",
+      "aliases": "veuvage|après un veuvage|vie après le veuvage"
+    },
+    {
+      "theme": "solitude",
+      "slug": "solitude-du-dimanche",
+      "keyword": "solitude du dimanche",
+      "title": "La solitude du dimanche : pourquoi ce jour-là pèse plus",
+      "aliases": "solitude du dimanche|dimanche seul|dimanches"
+    },
+    {
+      "theme": "solitude",
+      "slug": "benevolat-contre-la-solitude",
+      "keyword": "bénévolat contre la solitude",
+      "title": "Le bénévolat contre la solitude : par où commencer",
+      "aliases": "bénévolat|bénévole|association de bénévoles"
+    },
+    {
+      "theme": "aide",
+      "slug": "psychologue-ou-psychiatre-difference",
+      "keyword": "psychologue ou psychiatre",
+      "title": "Psychologue, psychiatre, psychothérapeute : qui fait quoi",
+      "aliases": "psychologue ou psychiatre|différence entre psychologue et psychiatre|psychothérapeute"
+    },
+    {
+      "theme": "aide",
+      "slug": "comment-choisir-un-psychologue",
+      "keyword": "comment choisir un psychologue",
+      "title": "Comment choisir un psychologue : les questions à se poser",
+      "aliases": "choisir un psychologue|trouver un psychologue|choisir son psy"
+    },
+    {
+      "theme": "aide",
+      "slug": "premiere-seance-chez-le-psy",
+      "keyword": "première séance chez le psy",
+      "title": "Première séance chez le psy : comment ça se passe",
+      "aliases": "première séance|première consultation chez le psy|premier rendez-vous chez le psy"
+    },
+    {
+      "theme": "aide",
+      "slug": "remboursement-psychologue",
+      "keyword": "remboursement psychologue",
+      "title": "Psychologue remboursé : ce que prévoit Mon soutien psy et les mutuelles",
+      "aliases": "Mon soutien psy|remboursement du psychologue|psychologue remboursé|séances remboursées"
+    },
+    {
+      "theme": "aide",
+      "slug": "lignes-d-ecoute-gratuites",
+      "keyword": "lignes d'écoute gratuites",
+      "title": "Lignes d'écoute gratuites en France : qui appeler, pour quoi",
+      "aliases": "lignes d'écoute|ligne d'écoute|SOS Amitié|numéro d'écoute"
+    },
+    {
+      "theme": "aide",
+      "slug": "parler-a-son-medecin-traitant-de-son-moral",
+      "keyword": "parler à son médecin de son moral",
+      "title": "Parler de son moral à son médecin traitant : par où commencer",
+      "aliases": "médecin traitant|parler à son médecin|en parler à son médecin"
+    },
+    {
+      "theme": "aide",
+      "slug": "depression-signes",
+      "keyword": "signes de la dépression",
+      "title": "Dépression : les signes qui ne trompent pas, et les plus discrets",
+      "aliases": "signes de la dépression|symptômes de la dépression|dépression"
+    },
+    {
+      "theme": "aide",
+      "slug": "idees-noires-que-faire",
+      "keyword": "idées noires que faire",
+      "title": "Idées noires : ce qu'il faut faire tout de suite, et qui appeler",
+      "aliases": "idées noires|idées suicidaires|pensées suicidaires|envie de mourir"
+    }
+  ]
+}

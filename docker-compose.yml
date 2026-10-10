@@ -1,0 +1,15 @@
+services:
+  sereina:
+    build:
+      context: .
+      args:
+        SITE_URL: https://www.votre-domaine.fr
+        PACKS: "petit:20:490:Petit pack,moyen:60:1290:Pack confort,grand:150:2490:Grand pack"
+    env_file: server/.env
+    volumes:
+      - sereina-data:/app/data
+    ports:
+      - "127.0.0.1:3000:3000"
+    restart: unless-stopped
+volumes:
+  sereina-data:
