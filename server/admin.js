@@ -7,6 +7,8 @@ import { passwordProblem } from "./security/password.js";
 import { encryptSecret, decryptSecret, generateTOTPSecret, totpUri, verifyTOTPCode, generateRecoveryCodes, totpConfigured } from "./security/totp.js";
 import { clientIp } from "./security/ratelimit.js";
 import { stripHtml, sanitizeEmail } from "./security/headers.js";
+import { listGuides, getPrompt, savePrompt, resetPrompt, promptHistory, restoreVersion, systemPrompt, guideExists, COMMON_KEY } from "./prompts.js";
+import { streamReply } from "./ai.js";
 
 const LEVELS = ["vert", "jaune", "orange", "rouge"];
 const COLORS = { vert: "#2e7d4f", jaune: "#b8860b", orange: "#d2691e", rouge: "#b22222" };
@@ -69,9 +71,13 @@ dt{color:var(--muted)}
 .login{max-width:420px;margin:60px auto;display:grid;gap:14px}.login label{display:grid;gap:4px}.login input{min-height:44px}
 .err{background:var(--alert-bg);color:var(--alert-fg);border:1px solid var(--alert-line);padding:10px 14px}
 .ok{background:var(--mist);padding:10px 14px}
+.prompt-ed textarea{width:100%;max-width:900px;font-family:ui-monospace,Menlo,monospace;font-size:14px;line-height:1.5}
+.prompt-ed label{display:grid;gap:6px;margin:16px 0}.prompt-ed .help{color:var(--muted);font-size:13px}
+pre.full{white-space:pre-wrap;background:var(--mist);padding:14px;max-width:900px;font-size:13px;max-height:420px;overflow:auto}
+.reply{background:var(--paper);border-left:3px solid var(--steel);padding:12px 16px;max-width:900px;white-space:pre-wrap;font-family:var(--body);font-size:16px}
 code.codes{display:block;white-space:pre;font-size:16px;line-height:1.7;padding:12px;background:var(--mist);margin:10px 0;max-width:320px}
 </style></head><body><div class="wrap">
-${req?.admin && !req.admin.pending_2fa ? `<p class="nav"><a href="/admin/">Utilisateurs</a> · <a href="/admin/alertes">Alertes ouvertes</a>${A.hasRole(req.admin, "admin") ? ' · <a href="/admin/journal">Journal</a>' : ""}${A.hasRole(req.admin, "owner") ? ' · <a href="/admin/equipe">Équipe</a>' : ""} · <a href="/admin/securite">Mon compte</a> · <a href="/">Site</a> <span class="who">${esc(req.admin.name || req.admin.email)} (${ROLE_LABEL[req.admin.role] || req.admin.role})</span> <form method="post" action="/admin/logout" class="out"><button class="ghost" type="submit">Déconnexion</button></form></p>` : ""}
+${req?.admin && !req.admin.pending_2fa ? `<p class="nav"><a href="/admin/">Utilisateurs</a> · <a href="/admin/alertes">Alertes ouvertes</a>${A.hasRole(req.admin, "admin") ? ' · <a href="/admin/accompagnants">Accompagnants</a> · <a href="/admin/journal">Journal</a>' : ""}${A.hasRole(req.admin, "owner") ? ' · <a href="/admin/equipe">Équipe</a>' : ""} · <a href="/admin/securite">Mon compte</a> · <a href="/">Site</a> <span class="who">${esc(req.admin.name || req.admin.email)} (${ROLE_LABEL[req.admin.role] || req.admin.role})</span> <form method="post" action="/admin/logout" class="out"><button class="ghost" type="submit">Déconnexion</button></form></p>` : ""}
 ${body}</div></body></html>`;
 }
 
@@ -310,6 +316,82 @@ admin.post("/equipe/:id/unlock", need("owner"), (req, res) => {
   db.prepare("UPDATE admins SET failed_attempts = 0, locked_until = NULL WHERE id = ?").run(req.params.id);
   A.audit("admin_unlocked", { adminId: req.admin.admin_id, target: req.params.id, ip: clientIp(req) });
   res.redirect("/admin/equipe");
+});
+
+// ---------- Accompagnants : prompts et indications ----------
+const promptKey = k => k === COMMON_KEY || guideExists(k);
+admin.get("/accompagnants", need("admin"), (req, res) => {
+  const c = getPrompt(COMMON_KEY);
+  const rows = listGuides().map(g => { const p = getPrompt(g.key); return `<tr><td><a href="/admin/accompagnants/${g.key}"><b>${esc(p.name)}</b></a><br><small>${esc(p.spec)}</small></td>
+    <td>${p.customized ? "modifié" : "par défaut"}</td><td>${p.indications ? "oui" : "non"}</td><td>${p.updatedAt ? fmt(p.updatedAt) + " · " + esc(p.updatedBy || "") : ""}</td></tr>`; }).join("");
+  res.send(page("Accompagnants", `<h1>Accompagnants</h1>
+  <p style="color:var(--muted);max-width:760px">Chaque accompagnant reçoit, à chaque message : les <b>règles communes</b> (ton, limites, sécurité), puis <b>son propre prompt</b> (personnalité, méthode), puis vos <b>indications</b> éventuelles. Modifiez, testez, et revenez à la version précédente à tout moment. Les changements s'appliquent au message suivant, sans redémarrage.</p>
+  <table><thead><tr><th>Accompagnant</th><th>Prompt</th><th>Indications</th><th>Dernière modification</th></tr></thead><tbody>
+  <tr><td><a href="/admin/accompagnants/${COMMON_KEY}"><b>Règles communes</b></a><br><small>s'appliquent à tous</small></td><td>${c.customized ? "modifié" : "par défaut"}</td><td>${c.indications ? "oui" : "non"}</td><td>${c.updatedAt ? fmt(c.updatedAt) + " · " + esc(c.updatedBy || "") : ""}</td></tr>
+  ${rows}</tbody></table>`, false, req));
+});
+
+function editorPage(req, key, extra = "") {
+  const p = getPrompt(key), isCommon = key === COMMON_KEY;
+  const hist = promptHistory(key).map(h => `<tr><td>${fmt(h.saved_at)}</td><td>${esc(h.saved_by || "")}</td><td>${h.len_prompt == null ? "texte par défaut" : h.len_prompt + " caractères"}${h.len_ind ? " · indications" : ""}</td>
+    <td><form method="post" action="/admin/accompagnants/${key}/restaurer" style="margin:0">${csrf(req)}<input type="hidden" name="id" value="${h.id}"><button class="ghost" type="submit">Restaurer</button></form></td></tr>`).join("");
+  return page(p.name, `<p><a href="/admin/accompagnants">← Accompagnants</a></p>
+  <h1>${esc(p.name)} ${isCommon ? "" : `<small style="color:var(--muted)">${esc(p.spec)}</small>`}</h1>
+  ${req.query.m ? `<div class="ok">${esc(req.query.m)}</div>` : ""}${extra}
+  <form class="prompt-ed" method="post" action="/admin/accompagnants/${key}">${csrf(req)}
+    <label><b>${isCommon ? "Règles communes à tous les accompagnants" : "Prompt de " + esc(p.name)}</b>
+      <span class="help">${isCommon ? "Ton, limites et protocole de sécurité. {NOM} est remplacé par le prénom de l'accompagnant. Ne retirez pas la partie Sécurité." : "Qui est " + esc(p.name) + ", ce qu'il ou elle accompagne, sa méthode. Écrivez au tutoiement, comme si vous briefiez une personne."} ${p.customized ? "<b>Version modifiée.</b>" : "Version par défaut (fichier server/prompts/" + key + ".md)."}</span>
+      <textarea name="prompt" rows="22">${esc(p.prompt)}</textarea></label>
+    <label><b>Indications supplémentaires</b>
+      <span class="help">Consignes ajoutées à la fin, sans réécrire le prompt : un point d'attention du moment, une ressource à citer, un sujet à éviter. Exemples : « Si on te parle de la canicule, rappelle de boire et de signaler les voisins isolés au CCAS. » ou « Mentionne que Sereina est gratuit pour les premiers échanges si on demande le prix. »</span>
+      <textarea name="indications" rows="6">${esc(p.indications)}</textarea></label>
+    <button class="btn" type="submit">Enregistrer</button>
+  </form>
+  ${p.customized ? `<form method="post" action="/admin/accompagnants/${key}/reset" class="inline">${csrf(req)}<button class="ghost" type="submit">Revenir au prompt par défaut (les indications sont conservées)</button></form>` : ""}
+  ${isCommon ? "" : `<h2>Tester ${esc(p.name)}</h2>
+  <form method="post" action="/admin/accompagnants/${key}/tester" class="prompt-ed">${csrf(req)}
+    <label><span class="help">Envoyez un message comme le ferait un utilisateur. Le test utilise le prompt <b>enregistré</b>, ne consomme pas de crédits et n'est pas conservé.</span>
+    <textarea name="message" rows="3" required placeholder="Ex. : Je n'arrive plus à dormir depuis que j'ai perdu mon mari.">${esc(req.body?.message || "")}</textarea></label>
+    <button class="btn" type="submit">Envoyer le message de test</button></form>
+  <h2>Prompt complet envoyé au modèle</h2><pre class="full">${esc(systemPrompt(key))}</pre>`}
+  <h2>Historique</h2><table><thead><tr><th>Date</th><th>Par</th><th>Contenu</th><th></th></tr></thead><tbody>${hist || '<tr><td colspan="4">Aucune modification.</td></tr>'}</tbody></table>`, false, req);
+}
+admin.get("/accompagnants/:key", need("admin"), (req, res) => {
+  if (!promptKey(req.params.key)) return res.status(404).send("Inconnu");
+  res.send(editorPage(req, req.params.key));
+});
+admin.post("/accompagnants/:key", need("admin"), (req, res) => {
+  const key = req.params.key; if (!promptKey(key)) return res.status(404).send("Inconnu");
+  const prompt = String(req.body.prompt || "").slice(0, 20000), indications = String(req.body.indications || "").slice(0, 5000);
+  if (!prompt.trim()) return res.redirect(`/admin/accompagnants/${key}?m=` + encodeURIComponent("Le prompt ne peut pas être vide. Utilisez « Revenir au prompt par défaut »."));
+  if (key === COMMON_KEY && !/3114/.test(prompt)) return res.redirect(`/admin/accompagnants/${key}?m=` + encodeURIComponent("Refusé : les règles communes doivent conserver le protocole de sécurité (3114)."));
+  savePrompt(key, { prompt, indications }, req.admin.name || req.admin.email);
+  A.audit("prompt_updated", { adminId: req.admin.admin_id, target: key, metadata: { prompt_len: prompt.length, indications_len: indications.length }, ip: clientIp(req) });
+  res.redirect(`/admin/accompagnants/${key}?m=` + encodeURIComponent("Enregistré. Actif dès le prochain message."));
+});
+admin.post("/accompagnants/:key/reset", need("admin"), (req, res) => {
+  const key = req.params.key; if (!promptKey(key)) return res.status(404).send("Inconnu");
+  resetPrompt(key, req.admin.name || req.admin.email);
+  A.audit("prompt_reset", { adminId: req.admin.admin_id, target: key, ip: clientIp(req) });
+  res.redirect(`/admin/accompagnants/${key}?m=` + encodeURIComponent("Prompt par défaut rétabli."));
+});
+admin.post("/accompagnants/:key/restaurer", need("admin"), (req, res) => {
+  const key = req.params.key; if (!promptKey(key)) return res.status(404).send("Inconnu");
+  const ok = restoreVersion(key, Number(req.body.id), req.admin.name || req.admin.email);
+  if (ok) A.audit("prompt_restored", { adminId: req.admin.admin_id, target: key, metadata: { version: Number(req.body.id) }, ip: clientIp(req) });
+  res.redirect(`/admin/accompagnants/${key}?m=` + encodeURIComponent(ok ? "Version restaurée." : "Version introuvable."));
+});
+const testTries = new Map();
+admin.post("/accompagnants/:key/tester", need("admin"), async (req, res) => {
+  const key = req.params.key; if (!guideExists(key)) return res.status(404).send("Inconnu");
+  const k = req.admin.admin_id, t = Date.now(), recent = (testTries.get(k) || []).filter(x => t - x < 60_000);
+  if (recent.length >= 6) return res.send(editorPage(req, key, `<div class="err">Trop de tests en une minute. Patientez un instant.</div>`));
+  recent.push(t); testTries.set(k, recent);
+  const msg = String(req.body.message || "").slice(0, 2000);
+  let reply = "";
+  try { reply = await streamReply(key, [{ role: "user", content: msg }], d => {}, undefined); }
+  catch (e) { reply = "Erreur : " + (e.message || e); }
+  res.send(editorPage(req, key, `<h2>Réponse de test</h2><p><b>Message :</b> ${esc(msg)}</p><div class="reply">${esc(reply)}</div>`));
 });
 
 // ---------- Journal d'audit ----------

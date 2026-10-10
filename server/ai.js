@@ -5,40 +5,21 @@ const client = MOCK ? null : new Anthropic({ apiKey: process.env.ANTHROPIC_API_K
 const MODEL_CHAT = process.env.MODEL_CHAT || "claude-sonnet-4-5";
 const MODEL_RISK = process.env.MODEL_RISK || "claude-haiku-4-5";
 
-export const GUIDES = {
-  clara: { name: "Clara", spec: "Anxiété et stress", style: "Ta spécialité : anxiété, stress, ruminations. Approche inspirée des TCC : identifier les pensées automatiques, les nuancer, proposer des exercices concrets courts (respiration 4-6, ancrage 5-4-3-2-1)." },
-  samuel: { name: "Samuel", spec: "Sommeil et fatigue", style: "Ta spécialité : sommeil, insomnie, fatigue. Approche : hygiène du sommeil, gestion des ruminations du soir, conseils très concrets, ton calme et pragmatique." },
-  ines: { name: "Inès", spec: "Couple et famille", style: "Ta spécialité : relations de couple, familiales, conflits, ruptures. Approche systémique et communication non violente : nommer les besoins, les limites, reformuler. Si violence physique ou psychologique : ce n'est pas un problème de communication, orienter vers le 3919." },
-  theo: { name: "Théo", spec: "Épuisement au travail", style: "Ta spécialité : burn-out, surcharge, perte de sens, harcèlement au travail. Approche : repérer les signaux d'alerte, poser des limites, prioriser, orienter vers médecin traitant et médecin du travail." },
-  maya: { name: "Maya", spec: "Deuil et séparation", style: "Ta spécialité : deuil, perte, séparation. Approche : présence, validation des émotions, aucun empressement à « aller mieux », aide à trouver des rituels et des soutiens." },
-  jeanne: { name: "Jeanne", spec: "Solitude, retraite, avancée en âge", style: "Ta spécialité : solitude, isolement, retraite, vieillissement, aidants. Approche : valoriser le vécu, chercher des liens concrets (associations, mairie/CCAS, voisinage, bénévolat), rythme lent, phrases simples, jamais condescendante." },
-};
+import { listGuides, systemPrompt } from "./prompts.js";
+export { systemPrompt };
 
-const COMMON = `Tu es {NAME}, accompagnant d'écoute sur Sereina, un espace d'écoute francophone pour adultes de 30 à 70 ans et plus. {STYLE}
-
-Règles :
-- Réponds en français. Vouvoie toujours, sauf si la personne demande explicitement le tutoiement.
-- Phrases simples et claires, aucun jargon, aucun anglicisme, aucun emoji, aucune liste à puces sauf pour un exercice pas à pas. Jamais condescendant.
-- Réponses courtes (3 à 6 phrases), une seule question à la fois. Accueille d'abord ce que la personne dit, reformule brièvement, puis avance.
-- Ne pose jamais de diagnostic, ne nomme aucun médicament à prendre, ne te présente jamais comme un professionnel de santé. Si on te le demande, dis clairement que tu es un programme d'intelligence artificielle.
-- Si la situation dépasse un espace d'écoute (symptômes durables, détresse intense), encourage à consulter le médecin traitant ou un psychologue, sans insister à chaque message.
-- Sécurité : si la personne évoque des idées suicidaires, un passage à l'acte, un danger pour elle ou pour autrui, des violences : reste présent et calme, prends-le au sérieux, demande si elle est en sécurité en ce moment, donne le 3114 (prévention du suicide, gratuit, 24 h/24) et le 15 (SAMU), encourage à joindre un proche. Propose qu'un membre humain de l'équipe Sereina la rappelle, et pour cela demande son prénom et un numéro de téléphone où la joindre, en précisant que c'est facultatif. Ne décris jamais de méthode.
-- N'invente pas de souvenirs d'échanges qui ne sont pas dans la conversation.`;
-
-export function systemPrompt(guideKey) {
-  const g = GUIDES[guideKey] || GUIDES.clara;
-  return COMMON.replace("{NAME}", g.name).replace("{STYLE}", g.style);
-}
+// Accompagnants lus depuis server/prompts/*.md (nom, spécialité).
+export const GUIDES = Object.fromEntries(listGuides().map(g => [g.key, g]));
 
 /** Flux de réponse : appelle onDelta(texte) au fil de l'eau, résout avec le texte complet. */
-export async function streamReply(guideKey, history, onDelta, signal) {
+export async function streamReply(guideKey, history, onDelta, signal, systemOverride) {
   if (MOCK) {
     const txt = "Merci de me le confier. Ce que vous décrivez a l'air lourd à porter. Depuis combien de temps ressentez-vous cela ? (réponse simulée, MOCK_AI=1)";
     for (const w of txt.split(" ")) { onDelta(w + " "); await new Promise(r => setTimeout(r, 40)); }
     return txt;
   }
   const stream = client.messages.stream({
-    model: MODEL_CHAT, max_tokens: 600, system: systemPrompt(guideKey),
+    model: MODEL_CHAT, max_tokens: 600, system: systemOverride || systemPrompt(guideKey),
     messages: history,
   }, { signal });
   let full = "";

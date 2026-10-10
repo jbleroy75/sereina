@@ -72,6 +72,17 @@ La logique est reprise du back-office renta-immo (PBKDF2, verrouillage progressi
 - **Limitation de débit** : chat 20 messages / 5 min, contact 5 / h, achat 10 / h, connexion 10 / 15 min ; champ piège (honeypot) sur le formulaire de contact.
 - **Alertes** : e-mail, webhook Slack/Discord/Teams, SMS Twilio (rouge) et Telegram, avec anti-spam de 6 h par utilisateur et niveau sur Telegram.
 
+## Prompts des accompagnants
+
+Chaque message envoyé au modèle contient, dans l'ordre : les **règles communes** (`server/prompts/_commun.md` : ton, limites, protocole de sécurité), le **prompt de l'accompagnant** (`server/prompts/<prenom>.md` : personnalité, ce qu'il accompagne, méthode, points d'attention), puis les **indications** éventuelles saisies par l'équipe.
+
+Deux façons de les modifier :
+
+- **Depuis le back-office**, page « Accompagnants » (rôle administrateur ou propriétaire) : modifier le prompt, ajouter des indications sans réécrire le prompt, **tester** avec un message (sans consommer de crédits), voir le prompt complet réellement envoyé, revenir au prompt par défaut ou restaurer une version précédente. Les changements sont actifs dès le message suivant, sans redémarrage, et tracés dans le journal d'audit. Les règles communes ne peuvent pas être enregistrées sans le protocole de sécurité (3114).
+- **Dans les fichiers** `server/prompts/*.md` : ce sont les versions par défaut, versionnées dans Git. Une modification faite dans le back-office prime sur le fichier tant qu'on ne revient pas au défaut.
+
+Pour ajouter un accompagnant : créer `server/prompts/<cle>.md` (avec `nom` et `specialite` en en-tête), puis l'ajouter dans `PROFILES` de `build.py` et dans la liste `GUIDES` de `static/chat.js`, ajouter son portrait, et relancer `build.py`.
+
 ## Exploitation
 
 - **Santé** : `GET /api/health` répond `{ok:true}` (503 pendant un redéploiement) pour la surveillance externe (UptimeRobot, Better Stack…). `GET /api/health?details=1` avec un admin connecté ou `Authorization: Bearer HEALTH_SECRET` donne l'état de l'IA, de Stripe, de l'e-mail, de la file d'e-mails, des alertes ouvertes et des conversations en cours.
