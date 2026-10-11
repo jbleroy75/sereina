@@ -550,6 +550,8 @@ def render_home(all_infos):
       <ul class="assure"><li>Gratuit pour commencer</li><li>Sans inscription</li><li>Confidentiel</li><li>Jour et nuit</li></ul>
       <p class="mini">Les accompagnants sont des programmes d'intelligence artificielle, pas des psychologues ni des médecins. En danger : appelez le <b>15</b> ou le <b>3114</b>.</p>
     </div>
+    <div class="hero-visual">
+    <img class="scene hero-scene" src="/static/img/scenes/accueil.svg" alt="Illustration : une personne installée sur son canapé avec une tasse chaude, face à la fenêtre où le jour se lève" width="800" height="640" fetchpriority="high">
     <figure class="preview" aria-label="Exemple d'échange">
       <figcaption class="pv-head">{portrait("samuel", "portrait mini")}<span><b>Samuel</b> · Sommeil et fatigue<small>Exemple d'échange</small></span></figcaption>
       <div class="pv-body">
@@ -558,6 +560,7 @@ def render_home(all_infos):
       </div>
       <div class="pv-foot">Vous écrivez, il vous écoute. Rien d'autre à faire.</div>
     </figure>
+    </div>
   </div>
 </section>
 <section class="band" id="accompagnants">
@@ -572,16 +575,17 @@ def render_home(all_infos):
   <h2>Comment ça marche</h2>
   <p class="sub">Trois étapes. Rien à installer.</p>
   <ol class="how">
-    <li><div><h3>Choisissez ce qui vous correspond</h3><p>Chaque accompagnant est préparé pour un type de difficulté. Vous pourrez en changer quand vous voulez.</p></div></li>
-    <li><div><h3>Écrivez ce qui se passe</h3><p>Comme vous le diriez à une personne de confiance. Quelques phrases suffisent ; l'accompagnant vous posera des questions pour bien comprendre.</p></div></li>
-    <li><div><h3>Avancez à votre rythme</h3><p>Vous êtes écouté, vous mettez de l'ordre dans ce que vous vivez, vous repartez avec des pistes concrètes. Si votre situation demande un professionnel, on vous dit lequel.</p></div></li>
+    <li><img class="spot" src="/static/img/scenes/etape1.svg" alt="" width="400" height="220" loading="lazy"><div><h3>Choisissez ce qui vous correspond</h3><p>Chaque accompagnant est préparé pour un type de difficulté. Vous pourrez en changer quand vous voulez.</p></div></li>
+    <li><img class="spot" src="/static/img/scenes/etape2.svg" alt="" width="400" height="220" loading="lazy"><div><h3>Écrivez ce qui se passe</h3><p>Comme vous le diriez à une personne de confiance. Quelques phrases suffisent ; l'accompagnant vous posera des questions pour bien comprendre.</p></div></li>
+    <li><img class="spot" src="/static/img/scenes/etape3.svg" alt="" width="400" height="220" loading="lazy"><div><h3>Avancez à votre rythme</h3><p>Vous êtes écouté, vous mettez de l'ordre dans ce que vous vivez, vous repartez avec des pistes concrètes. Si votre situation demande un professionnel, on vous dit lequel.</p></div></li>
   </ol>
   </div>
 </section>
 {reviews_block("Ce qu'en disent celles et ceux qui l'ont utilisée", cls="band")}
 <section id="confiance">
   <div class="wrap">
-  <h2>Ce que Sereina est, et ce qu'elle n'est pas</h2>
+  <div class="trust-top"><div><h2>Ce que Sereina est, et ce qu'elle n'est pas</h2><p class="sub">Une écoute attentive, comme celle d'un ami qui prend le temps. Mais avec des limites que nous voulons vous dire clairement.</p></div>
+  <img class="scene" src="/static/img/scenes/ensemble.svg" alt="Illustration : deux personnes assises sur un banc, en train de discuter calmement" width="800" height="460" loading="lazy"></div>
   <div class="isnot">
     <div class="is"><h3>Sereina, c'est</h3><ul><li>Une écoute attentive, sans jugement, à toute heure</li><li>Des pistes simples et concrètes pour y voir plus clair</li><li>Des échanges qui ne sont jamais vendus ni partagés</li><li>Un texte qui s'agrandit d'un clic, pour lire confortablement</li></ul></div>
     <div class="isnt"><h3>Sereina, ce n'est pas</h3><ul><li>Un psychologue ou un médecin : aucun diagnostic, aucun traitement</li><li>Un service d'urgence : en danger, appelez le 15 ou le 3114</li><li>Une personne réelle : les accompagnants sont des programmes d'intelligence artificielle</li></ul></div>
@@ -629,7 +633,7 @@ def render_home(all_infos):
   </div>
 </section>
 <section class="final">
-  <div class="wrap"><h2>Prêt à en parler ?</h2><p class="sub">Les premiers échanges sont gratuits, sans inscription. Prenez le temps qu'il vous faut.</p><div class="cta2"><a class="btn big" href="/parler/">Commencer à parler</a></div></div>
+  <div class="wrap"><img class="scene fin-scene" src="/static/img/scenes/fin.svg" alt="" width="800" height="420" loading="lazy"><h2>Prêt à en parler ?</h2><p class="sub">Les premiers échanges sont gratuits, sans inscription. Prenez le temps qu'il vous faut.</p><div class="cta2"><a class="btn big" href="/parler/">Commencer à parler</a></div></div>
 </section>"""
     extra = '<script type="application/ld+json">' + json.dumps({
         "@context": "https://schema.org", "@type": "WebSite", "name": "Sereina", "url": url("/"), "inLanguage": "fr-FR",
