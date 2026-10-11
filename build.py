@@ -108,7 +108,7 @@ def esc(s):
 def url(path):
     return SITE_URL + path
 
-def layout(title, description, body, path, extra_head="", nav_on="", toc=None, one_col=False, noindex=False):
+def layout(title, description, body, path, extra_head="", nav_on="", toc=None, one_col=False, noindex=False, page_class=""):
     if noindex:
         extra_head += '<meta name="robots" content="noindex">'
     canonical = url(path)
@@ -161,7 +161,7 @@ def layout(title, description, body, path, extra_head="", nav_on="", toc=None, o
     <button class="sizebtn" id="sizeBtn" type="button" aria-pressed="false">Agrandir le texte</button>
   </nav>
 </div></header>
-<div class="page{' one' if one_col else ''}">
+<div class="page{' one' if one_col else ''}{' ' + page_class if page_class else ''}">
 {toc_html}
 <main>
 {body}
@@ -523,42 +523,75 @@ def render_home(all_infos):
     picks_html = "".join(f'<li><a href="{i["path"]}">{esc(i["title"])}</a><p>{esc(i["description"])}</p></li>' for i in picks)
     toc = [("accueil", "Accueil"), ("comment", "Comment ça marche"), ("accompagnants", "Les accompagnants"),
            ("conseils", "Conseils gratuits"), ("guides", "Guides à télécharger"), ("urgence", "En cas d'urgence"), ("questions", "Questions fréquentes")]
+    feel = {'clara': "Je suis anxieux, mon esprit ne s'arrête jamais", 'samuel': 'Je dors mal et je suis épuisé', 'ines': 'Ça ne va plus dans mon couple ou ma famille', 'theo': "Le travail m'use, je n'en peux plus", 'maya': 'Je traverse un deuil ou une séparation', 'jeanne': 'Je me sens seul, ma vie est en train de changer'}
+    feels = "".join(
+        f'<li><a class="feel" href="/parler/?avec={k}">{portrait(k, "portrait small")}<span class="ft"><b>{esc(feel[k])}</b><small>Avec {esc(p["name"])} · {esc(p["spec"])}</small></span><span class="fgo" aria-hidden="true">→</span></a></li>'
+        for k, p in PROFILES.items())
+    picks_cards = "".join(f'<li><a href="{i["path"]}"><b>{esc(i["title"])}</b><span>{esc(i["description"])}</span><em>Lire l\'article →</em></a></li>' for i in picks)
     body = f"""
-<section id="accueil">
-  <div class="hero">
-  <div><h1>Parler de ce qui vous pèse, simplement.</h1>
-  <p class="lede">Un souci au travail, une inquiétude pour un proche, des nuits difficiles, le sentiment d'être seul. Sur Sereina, vous l'écrivez avec vos mots et un accompagnant d'écoute vous répond. Sans inscription, de jour comme de nuit.</p></div>
-  <figure class="breath" aria-hidden="true"><div class="rings"><span></span><span></span><span></span></div><figcaption><span class="in">Inspirez</span><span class="out">Soufflez</span></figcaption></figure>
+<section class="hero-band" id="accueil">
+  <div class="wrap hero2">
+    <div class="hero-copy">
+      <p class="kicker">Espace d'écoute en ligne, jour et nuit</p>
+      <h1>Parler de ce qui vous pèse, sans être jugé.</h1>
+      <p class="lede">Écrivez avec vos mots, à l'heure qui vous convient. Un accompagnant d'écoute vous répond avec douceur, vous aide à y voir plus clair et à trouver quoi faire ensuite.</p>
+      <div class="cta2"><a class="btn big" href="/parler/">Commencer à parler</a><a class="btn alt" href="/conseils/">Voir les conseils</a></div>
+      <ul class="assure"><li>Gratuit pour commencer</li><li>Sans inscription</li><li>Confidentiel</li><li>Jour et nuit</li></ul>
+      <p class="mini">Les accompagnants sont des programmes d'intelligence artificielle, pas des psychologues ni des médecins. En danger : appelez le <b>15</b> ou le <b>3114</b>.</p>
+    </div>
+    <figure class="preview" aria-label="Exemple d'échange">
+      <figcaption class="pv-head">{portrait("samuel", "portrait mini")}<span><b>Samuel</b> · Sommeil et fatigue<small>Exemple d'échange</small></span></figcaption>
+      <div class="pv-body">
+        <p class="pv-msg me">Je dors mal depuis des semaines, je tourne en rond dans ma tête.</p>
+        <p class="pv-msg">Merci de me le dire, ce n'est pas facile. Depuis quand les nuits sont-elles difficiles ? Racontez-moi à votre rythme, il n'y a pas de bonne façon de le dire.</p>
+      </div>
+      <div class="pv-foot">Vous écrivez, il vous écoute. Rien d'autre à faire.</div>
+    </figure>
   </div>
-  <div class="run"><p>Les accompagnants sont des programmes d'intelligence artificielle, préparés pour écouter avec respect, aider à y voir plus clair et indiquer vers qui se tourner quand une aide humaine est nécessaire. Ils ne sont pas des psychologues ni des médecins.</p></div>
-  <div class="cta"><a class="btn" href="/parler/">Commencer à parler</a></div>
-  <div class="alert"><b>Sereina n'est pas un service médical.</b> Aucun diagnostic, aucun traitement. Si vous êtes en danger ou pensez à vous faire du mal, appelez le 15 ou le 3114, gratuits et joignables 24 h/24.</div>
+</section>
+<section class="band" id="accompagnants">
+  <div class="wrap">
+  <h2>Qu'est-ce qui vous pèse en ce moment ?</h2>
+  <p class="sub">Choisissez la situation qui vous ressemble : l'accompagnant préparé pour elle vous répond. Vous pouvez en changer à tout moment. <a href="/accompagnants/">Découvrir les six accompagnants</a>. Les portraits sont des illustrations : les accompagnants ne sont pas des personnes réelles.</p>
+  <ul class="feels">{feels}</ul>
+  </div>
 </section>
 <section id="comment">
+  <div class="wrap">
   <h2>Comment ça marche</h2>
   <p class="sub">Trois étapes. Rien à installer.</p>
   <ol class="how">
-    <li><div><h3>Choisissez un accompagnant</h3><p>Chacun a été préparé pour un type de difficulté. Vous pourrez en changer quand vous voulez.</p></div></li>
+    <li><div><h3>Choisissez ce qui vous correspond</h3><p>Chaque accompagnant est préparé pour un type de difficulté. Vous pourrez en changer quand vous voulez.</p></div></li>
     <li><div><h3>Écrivez ce qui se passe</h3><p>Comme vous le diriez à une personne de confiance. Quelques phrases suffisent ; l'accompagnant vous posera des questions pour bien comprendre.</p></div></li>
     <li><div><h3>Avancez à votre rythme</h3><p>Vous êtes écouté, vous mettez de l'ordre dans ce que vous vivez, vous repartez avec des pistes concrètes. Si votre situation demande un professionnel, on vous dit lequel.</p></div></li>
   </ol>
+  </div>
 </section>
-<section id="accompagnants">
-  <h2>Les accompagnants</h2>
-  <p class="sub">Six programmes d'écoute, chacun préparé pour une difficulté et une façon d'écouter. Les portraits sont des illustrations : les accompagnants ne sont pas des personnes réelles.</p>
-  <ul class="people">{people}</ul>
+<section class="band" id="confiance">
+  <div class="wrap">
+  <h2>Ce que Sereina est, et ce qu'elle n'est pas</h2>
+  <div class="isnot">
+    <div class="is"><h3>Sereina, c'est</h3><ul><li>Une écoute attentive, sans jugement, à toute heure</li><li>Des pistes simples et concrètes pour y voir plus clair</li><li>Des échanges qui ne sont jamais vendus ni partagés</li><li>Un texte qui s'agrandit d'un clic, pour lire confortablement</li></ul></div>
+    <div class="isnt"><h3>Sereina, ce n'est pas</h3><ul><li>Un psychologue ou un médecin : aucun diagnostic, aucun traitement</li><li>Un service d'urgence : en danger, appelez le 15 ou le 3114</li><li>Une personne réelle : les accompagnants sont des programmes d'intelligence artificielle</li></ul></div>
+  </div>
+  </div>
 </section>
 <section id="conseils">
+  <div class="wrap">
   <h2>Conseils gratuits</h2>
   <p class="sub">Cent pages pour comprendre ce que vous vivez et savoir quoi faire, écrites simplement. <a href="/conseils/">Voir tous les thèmes</a>.</p>
-  <ul class="list">{picks_html}</ul>
+  <ul class="cards">{picks_cards}</ul>
+  </div>
 </section>
-<section id="guides">
+<section class="band" id="guides">
+  <div class="wrap">
   <h2>Guides gratuits à télécharger</h2>
   <p class="sub">Cinq guides pratiques en PDF, à lire à votre rythme et à imprimer. <a href="/guides/">Voir tous les guides</a>.</p>
   <div class="nlbox wide"><div><p>Choisissez un guide et indiquez votre adresse e-mail : vous recevez un lien de confirmation, puis le guide.</p>{nl_form("anxiete", "accueil", "Recevoir le guide", select=True)}{NL_CONSENT}</div></div>
+  </div>
 </section>
 <section id="urgence">
+  <div class="wrap">
   <h2>En cas d'urgence</h2>
   <p class="sub">Si vous êtes en danger, ou si quelqu'un près de vous l'est, parlez à un humain tout de suite. Ces numéros sont gratuits.</p>
   <ul class="numbers">
@@ -568,8 +601,10 @@ def render_home(all_infos):
     <li><b>3919</b><p>Violences faites aux femmes, écoute et orientation.</p></li>
     <li><b>3977</b><p>Maltraitance des personnes âgées ou en situation de handicap.</p></li>
   </ul>
+  </div>
 </section>
-<section id="questions">
+<section class="band" id="questions">
+  <div class="wrap">
   <h2>Questions fréquentes</h2>
   <div class="faq">
     <details><summary>Est-ce que je parle à un vrai psychologue ?</summary><p>Non. Les accompagnants sont des programmes d'intelligence artificielle, préparés pour une écoute attentive et des outils simples issus des thérapies cognitives et comportementales. Ils ne sont pas des professionnels de santé et ne remplacent pas une consultation.</p></details>
@@ -579,13 +614,17 @@ def render_home(all_infos):
     <details><summary>Puis-je retrouver mes conversations sur un autre appareil ?</summary><p>Oui. Ajoutez votre adresse e-mail dans <a href="/mon-compte/">Mon compte</a> : vous recevez un code à 6 chiffres, sans mot de passe à retenir. Vos crédits et vos conversations vous suivent ensuite sur votre téléphone, votre tablette et votre ordinateur.</p></details>
     <details><summary>Est-ce gratuit ?</summary><p>Les premiers échanges sont gratuits, sans inscription. Pour continuer au-delà, vous achetez des crédits : 1 crédit = 1 message, sans abonnement ni date limite. <a href="/credits/">Voir les tarifs</a>.</p></details>
   </div>
+  </div>
+</section>
+<section class="final">
+  <div class="wrap"><h2>Prêt à en parler ?</h2><p class="sub">Les premiers échanges sont gratuits, sans inscription. Prenez le temps qu'il vous faut.</p><div class="cta2"><a class="btn big" href="/parler/">Commencer à parler</a></div></div>
 </section>"""
     extra = '<script type="application/ld+json">' + json.dumps({
         "@context": "https://schema.org", "@type": "WebSite", "name": "Sereina", "url": url("/"), "inLanguage": "fr-FR",
         "description": "Espace d'écoute en ligne avec des accompagnants d'intelligence artificielle, et des conseils gratuits pour aller mieux."}, ensure_ascii=False) + "</script>"
     write("/", layout("Sereina, espace d'écoute : parler de ce qui vous pèse",
                       "Sereina : un espace d'écoute en ligne, jour et nuit. Écrivez ce qui vous pèse, un accompagnant d'écoute vous répond. Conseils gratuits sur l'anxiété, le sommeil, le travail, le couple, le deuil.",
-                      body, "/", extra + NL_SCRIPT, "", toc))
+                      body, "/", extra + NL_SCRIPT, "", None, True, page_class="home"))
 
 def render_urgence():
     body = """

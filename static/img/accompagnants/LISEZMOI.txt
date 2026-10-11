@@ -5,5 +5,5 @@ Déposez ici vos six images, nommées exactement :
 (ou .png / .webp : indiquez alors l'extension dans PORTRAIT_EXT lors du build, ex. PORTRAIT_EXT=webp python3 build.py)
 
 Format conseillé : carré, 600 x 600 pixels minimum, visage centré, fond uni ou flou, moins de 150 Ko.
-Tant qu'un fichier manque, un visuel provisoire (initiale) est affiché à sa place.
+Tant qu'un fichier manque, une illustration par défaut (visage dessiné) est affiché à sa place.
 Relancez python3 build.py après avoir déposé les images.
