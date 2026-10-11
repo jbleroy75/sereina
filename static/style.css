@@ -626,3 +626,6 @@ a,button,.btn,.ghost{transition:color .2s,background-color .2s,border-color .2s,
   .hero-visual .preview{width:100%;margin-top:-40px}
   .hero-scene{aspect-ratio:4/3;object-fit:cover;object-position:center 30%}
 }
+.mini.center{margin-inline:auto;text-align:center}
+.cards .plain{display:flex;flex-direction:column;gap:10px;height:100%;padding:24px;background:var(--paper);border:1px solid var(--line);border-top:5px solid var(--steel);border-radius:18px;box-shadow:var(--shadow)}
+.cards .plain span{display:block;-webkit-line-clamp:unset;overflow:visible}

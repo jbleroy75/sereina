@@ -167,7 +167,7 @@ def layout(title, description, body, path, extra_head="", nav_on="", toc=None, o
 {body}
 <footer>
   <span>Sereina, {TODAY[:4]}. Un espace d'écoute, pas un service médical.</span>
-  <span><a href="/a-propos/">À propos</a> · <a href="/guides/">Guides gratuits</a> · <a href="/application/">Application</a> · <a href="/credits/">Tarifs</a> · <a href="/contact/">Contact</a> · <a href="/confidentialite/">Confidentialité</a> · <a href="/cgv/">Conditions</a> · <a href="/mentions-legales/">Mentions légales</a></span>
+  <span><a href="/a-propos/">À propos</a> · <a href="/guides/">Guides gratuits</a> · <a href="/application/">Application</a> · <a href="/offrir/">Offrir à un proche</a> · <a href="/credits/">Tarifs</a> · <a href="/contact/">Contact</a> · <a href="/confidentialite/">Confidentialité</a> · <a href="/cgv/">Conditions</a> · <a href="/mentions-legales/">Mentions légales</a></span>
 </footer>
 </main>
 </div>
@@ -633,7 +633,7 @@ def render_home(all_infos):
   </div>
 </section>
 <section class="final">
-  <div class="wrap"><img class="scene fin-scene" src="/static/img/scenes/fin.svg" alt="" width="800" height="420" loading="lazy"><h2>Prêt à en parler ?</h2><p class="sub">Les premiers échanges sont gratuits, sans inscription. Prenez le temps qu'il vous faut.</p><div class="cta2"><a class="btn big" href="/parler/">Commencer à parler</a></div></div>
+  <div class="wrap"><img class="scene fin-scene" src="/static/img/scenes/fin.svg" alt="" width="800" height="420" loading="lazy"><h2>Prêt à en parler ?</h2><p class="sub">Les premiers échanges sont gratuits, sans inscription. Prenez le temps qu'il vous faut.</p><div class="cta2"><a class="btn big" href="/parler/">Commencer à parler</a></div><p class="mini center">Pour un parent âgé ? <a href="/offrir/">Offrir Sereina à un proche</a>.</p></div>
 </section>"""
     extra = '<script type="application/ld+json">' + json.dumps({
         "@context": "https://schema.org", "@type": "WebSite", "name": "Sereina", "url": url("/"), "inLanguage": "fr-FR",
@@ -641,6 +641,89 @@ def render_home(all_infos):
     write("/", layout("Sereina, espace d'écoute : parler de ce qui vous pèse",
                       "Sereina : un espace d'écoute en ligne, jour et nuit. Écrivez ce qui vous pèse, un accompagnant d'écoute vous répond. Conseils gratuits sur l'anxiété, le sommeil, le travail, le couple, le deuil.",
                       body, "/", extra + NL_SCRIPT + REVIEWS_SCRIPT, "", None, True, page_class="home"))
+
+def render_offrir():
+    body = f"""
+<section class="hero-band">
+  <div class="wrap hero2">
+    <div class="hero-copy">
+      <p class="kicker">Pour les proches de personnes âgées</p>
+      <h1>Offrez à votre parent un espace pour discuter, quand il en a envie.</h1>
+      <p class="lede">Il n'ose pas toujours vous « déranger ». Les nuits sont parfois longues. Sereina lui offre une oreille attentive, à toute heure, sans rendez-vous et sans jugement. Vous, vous restez tranquille : c'est simple, et ses échanges ne regardent que lui.</p>
+      <div class="cta2"><a class="btn big" href="#cadeau">Offrir Sereina</a><a class="btn alt" href="/parler/">L'essayer d'abord</a></div>
+      <ul class="assure"><li>Aucun compte à créer</li><li>Texte agrandissable</li><li>Conversations privées</li></ul>
+      <p class="mini">Sereina est un programme d'intelligence artificielle, pas une personne ni un psychologue. Cela ne remplace ni vos visites, ni vos appels, ni un professionnel de santé.</p>
+    </div>
+    <div class="hero-visual"><img class="scene hero-scene" src="/static/img/scenes/ensemble.svg" alt="Illustration : deux personnes assises sur un banc, en train de discuter calmement" width="800" height="460" fetchpriority="high"></div>
+  </div>
+</section>
+<section class="band">
+  <div class="wrap">
+  <h2>Une expérience pensée pour être simple</h2>
+  <p class="sub">Pas d'application à télécharger, pas de mot de passe à retenir, rien qui ressemble à de l'informatique compliquée.</p>
+  <ul class="cards">
+    <li><span class="plain"><b>Une case et un bouton</b><span>Votre parent écrit ce qu'il a sur le cœur, comme dans un message, et clique sur « Envoyer ». L'accompagnant lui répond avec douceur.</span></span></li>
+    <li><span class="plain"><b>Écrit gros, lisible</b><span>Les caractères sont grands et contrastés. Un bouton « Agrandir le texte » est visible sur chaque page, pour lire sans effort.</span></span></li>
+    <li><span class="plain"><b>Disponible à toute heure</b><span>À trois heures du matin comme un dimanche après-midi. Aucun horaire, aucune attente, aucun rendez-vous.</span></span></li>
+  </ul>
+  </div>
+</section>
+<section>
+  <div class="wrap">
+  <h2>Installation accompagnée, en cinq minutes</h2>
+  <p class="sub">Vous pouvez la faire ensemble, à la maison ou au téléphone. Rien à payer pour installer.</p>
+  <ol class="how">
+    <li><img class="spot" src="/static/img/scenes/etape1.svg" alt="" width="400" height="220" loading="lazy"><div><h3>Ouvrez le site ensemble</h3><p>Sur son téléphone ou sa tablette, ouvrez <b>serena.jbleroy.fr</b>. Touchez « Agrandir le texte » si besoin.</p></div></li>
+    <li><img class="spot" src="/static/img/scenes/etape2.svg" alt="" width="400" height="220" loading="lazy"><div><h3>Mettez-le à portée de main</h3><p>Suivez la <a href="/application/">page « Application »</a> : l'icône Sereina s'ajoute à l'écran d'accueil, comme une application, en moins d'une minute.</p></div></li>
+    <li><img class="spot" src="/static/img/scenes/etape3.svg" alt="" width="400" height="220" loading="lazy"><div><h3>Choisissez avec lui son accompagnant</h3><p>Chacun est préparé pour une difficulté : sommeil, deuil, solitude, couple… <a href="/accompagnants/jeanne/">Jeanne</a> accompagne les changements de vie et la solitude. Essayez un premier échange à deux.</p></div></li>
+  </ol>
+  </div>
+</section>
+<section class="band" id="vie-privee">
+  <div class="wrap">
+  <h2>Ce qu'il se dit reste entre lui et Sereina</h2>
+  <p class="sub">La confiance compte plus que tout. C'est pourquoi nous avons fait un choix net.</p>
+  <div class="isnot">
+    <div class="is"><h3>Pour vous, ses proches</h3><ul><li>Vous offrez, vous installez, vous êtes rassuré</li><li>Vous pouvez lui demander comment ça se passe, s'il veut en parler</li><li>Il peut tout effacer à tout moment depuis « Mon compte »</li><li>Ses échanges sont supprimés automatiquement après {RETENTION_DAYS} jours</li></ul></div>
+    <div class="isnt"><h3>Ce que nous ne ferons jamais</h3><ul><li>Vous donner accès à ses conversations : il n'y a pas de tableau de bord pour les proches</li><li>Vous envoyer des comptes rendus de ce qu'il écrit</li><li>Vendre ou partager ce qu'il confie</li></ul></div>
+  </div>
+  <p class="sub">Si votre parent traverse un moment très difficile, l'accompagnant l'invite lui-même à appeler le <b>3114</b> ou le <b>15</b>. Il ne peut pas prévenir sa famille à sa place.</p>
+  </div>
+</section>
+<section id="cadeau">
+  <div class="wrap">
+  <h2>Offrir des crédits à l'avance</h2>
+  <p class="sub">Les premiers échanges sont gratuits. Pour aller plus loin, <b>1 crédit = 1 message</b>, sans abonnement, et les crédits n'expirent jamais : votre parent les utilise à son rythme. Les packs vont de {PACKS[0]["credits"]} à {PACKS[-1]["credits"]} messages, <a href="/credits/">voir les tarifs</a>.</p>
+  <p class="sub">Pour le moment, nous préparons chaque cadeau avec vous, à la main : dites-nous à qui vous voulez l'offrir et combien de crédits, nous vous répondons sous deux jours ouvrés pour tout organiser.</p>
+  <form class="form" id="contactForm">
+    <div class="hp" aria-hidden="true"><label>Site web<input name="website" tabindex="-1" autocomplete="off"></label></div>
+    <input type="hidden" name="subject" value="Offrir Sereina à un proche">
+    <label>Votre e-mail<br><input type="email" name="email" required autocomplete="email"></label>
+    <label>Dites-nous en quelques mots<br><textarea name="message" rows="5" required placeholder="Exemple : je voudrais offrir 60 crédits à ma mère, qui a 78 ans et vit seule. Elle a un téléphone mais n'est pas à l'aise."></textarea></label>
+    <p class="mini">N'écrivez pas d'informations médicales sur votre parent. Nous n'utilisons votre adresse que pour vous répondre.</p>
+    <button class="btn big" type="submit">Envoyer ma demande</button>
+    <p class="sub" id="contactMsg"></p>
+  </form>
+  </div>
+</section>
+<section class="band">
+  <div class="wrap">
+  <h2>Questions fréquentes</h2>
+  <div class="faq">
+    <details><summary>Est-ce que ça remplace une visite ou un appel ?</summary><p>Non, et ce n'est pas le but. Sereina est un complément pour les moments où personne n'est disponible : la nuit, le dimanche, ou quand on n'ose pas déranger. Rien ne remplace un vrai lien avec ses proches.</p></details>
+    <details><summary>Mon parent saura-t-il que c'est un programme ?</summary><p>Oui, c'est dit clairement sur chaque page et dans chaque conversation. Les accompagnants sont des programmes d'intelligence artificielle, jamais présentés comme des personnes.</p></details>
+    <details><summary>Faut-il que mon parent crée un compte ?</summary><p>Non pour essayer. Pour retrouver ses crédits sur plusieurs appareils, il peut ajouter une adresse e-mail dans « Mon compte » : un code à 6 chiffres lui est envoyé, sans mot de passe.</p></details>
+    <details><summary>Et si je crains pour sa sécurité ?</summary><p>Sereina n'est pas un service d'urgence. En cas de danger, appelez le <b>15</b> ou le <b>112</b>. Pour une situation de maltraitance d'une personne âgée, le <b>3977</b> est gratuit.</p></details>
+  </div>
+  </div>
+</section>
+<section class="final">
+  <div class="wrap"><img class="scene fin-scene" src="/static/img/scenes/fin.svg" alt="" width="800" height="420" loading="lazy"><h2>Un petit geste, une présence à toute heure.</h2><p class="sub">Essayez d'abord vous-même : c'est gratuit et sans inscription.</p><div class="cta2"><a class="btn big" href="/parler/">Essayer Sereina</a><a class="btn alt" href="#cadeau">Offrir Sereina</a></div></div>
+</section>
+<script src="/static/contact.js" defer></script>"""
+    write("/offrir/", layout("Offrir Sereina à un parent : un espace pour discuter, à toute heure",
+                             "Offrez à votre parent âgé un espace d'écoute en ligne, simple et privé : installation accompagnée, crédits à offrir, conversations jamais accessibles aux proches.",
+                             body, "/offrir/", "", "", None, True, page_class="home"))
 
 def render_urgence():
     body = """
@@ -941,13 +1024,14 @@ def main():
     render_conseils_index(infos)
     render_home(infos)
     render_urgence()
+    render_offrir()
     render_parler()
     render_misc()
     render_pages()
     render_accompagnants(infos)
     render_guides()
     render_pwa()
-    paths = ["/", "/conseils/", "/parler/", "/urgence/", "/credits/", "/guides/", "/application/", "/accompagnants/"] + [f"/accompagnants/{k}/" for k in PROFILES] + ["/a-propos/", "/contact/", "/confidentialite/", "/cgv/", "/mentions-legales/"] + [f"/conseils/{THEMES[t]['slug']}/" for t in THEMES] + [i["path"] for i in infos]
+    paths = ["/", "/conseils/", "/parler/", "/urgence/", "/offrir/", "/credits/", "/guides/", "/application/", "/accompagnants/"] + [f"/accompagnants/{k}/" for k in PROFILES] + ["/a-propos/", "/contact/", "/confidentialite/", "/cgv/", "/mentions-legales/"] + [f"/conseils/{THEMES[t]['slug']}/" for t in THEMES] + [i["path"] for i in infos]
     render_sitemap(paths)
     json.dump(infos, open(os.path.join(DIST, "articles.json"), "w"), ensure_ascii=False, indent=1)
     SEO_STATE["_sitemap"] = paths
