@@ -33,7 +33,7 @@ FONTS = os.path.join(ROOT, "assets", "fonts")
 # Ordre d'affichage et thèmes reliés (pour la page /guides/ et les encarts des articles)
 ORDER = ["anxiete", "sommeil", "epuisement", "deuil", "prendre-soin"]
 
-STEEL, INK, MUTED, LINE, MIST = HexColor("#2f4a64"), HexColor("#1b232b"), HexColor("#4f5c68"), HexColor("#cbd5df"), HexColor("#e3e9ef")
+STEEL, INK, MUTED, LINE, MIST = HexColor("#1d5a55"), HexColor("#241f1a"), HexColor("#52483f"), HexColor("#e3d9ca"), HexColor("#e8f1ed")
 ALERT_BG, ALERT_FG = HexColor("#fbf1e6"), HexColor("#6f3a1a")
 
 pdfmetrics.registerFont(TTFont("Plex", os.path.join(FONTS, "IBMPlexSans-Regular.ttf")))

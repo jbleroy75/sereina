@@ -136,10 +136,10 @@ def layout(title, description, body, path, extra_head="", nav_on="", toc=None, o
 <meta name="twitter:card" content="summary">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:ital,wght@0,400;0,500;1,400&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap">
 <link rel="stylesheet" href="/static/style.css">
 <link rel="manifest" href="/manifest.webmanifest">
-<meta name="theme-color" content="#2f4a64">
+<meta name="theme-color" content="#1d5a55">
 <link rel="icon" href="/favicon.ico" sizes="32x32">
 <link rel="icon" href="/static/icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
@@ -149,6 +149,8 @@ def layout(title, description, body, path, extra_head="", nav_on="", toc=None, o
 <body>
 <header class="masthead"><div class="in">
   <a class="brand" href="/">Sereina<small>Espace d'écoute</small></a>
+  <input type="checkbox" id="menuToggle" class="menu-toggle" aria-label="Ouvrir ou fermer le menu">
+  <label for="menuToggle" class="menubtn">Menu</label>
   <nav class="topnav" aria-label="Navigation principale">
     <a href="/conseils/"{on('conseils')}>Conseils</a>
     <a href="/accompagnants/"{on('accompagnants')}>Les accompagnants</a>
@@ -433,7 +435,7 @@ def render_pwa():
     manifest = {"name": "Sereina, espace d'écoute", "short_name": "Sereina", "lang": "fr", "dir": "ltr",
                 "description": "Parler de ce qui vous pèse, jour et nuit, avec un accompagnant d'écoute.",
                 "start_url": "/?source=app", "scope": "/", "display": "standalone", "orientation": "portrait-primary",
-                "background_color": "#f2f4f6", "theme_color": "#2f4a64", "categories": ["health", "lifestyle"],
+                "background_color": "#fbf8f2", "theme_color": "#1d5a55", "categories": ["health", "lifestyle"],
                 "icons": [{"src": "/static/icons/icon-192.png", "sizes": "192x192", "type": "image/png"},
                           {"src": "/static/icons/icon-512.png", "sizes": "512x512", "type": "image/png"},
                           {"src": "/static/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}],
@@ -452,13 +454,13 @@ def make_icons():
     os.makedirs(d, exist_ok=True)
     svg = os.path.join(d, "icon.svg")
     if not os.path.exists(svg):
-        open(svg, "w").write('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#2f4a64"/><text x="32" y="45" text-anchor="middle" font-family="IBM Plex Sans,Arial,sans-serif" font-weight="600" font-size="38" fill="#fff">S</text><rect x="16" y="52" width="32" height="3" fill="#8fb0cf"/></svg>')
+        open(svg, "w").write('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#1d5a55"/><text x="32" y="45" text-anchor="middle" font-family="IBM Plex Sans,Arial,sans-serif" font-weight="600" font-size="38" fill="#fff">S</text><rect x="16" y="52" width="32" height="3" fill="#bfe3d9"/></svg>')
     if os.path.exists(os.path.join(d, "icon-512.png")):
         return
     from PIL import Image, ImageDraw, ImageFont
     font_path = os.path.join(ROOT, "assets", "fonts", "IBMPlexSans-SemiBold.ttf")
     def draw(size, pad_ratio):
-        im = Image.new("RGB", (size, size), "#2f4a64")
+        im = Image.new("RGB", (size, size), "#1d5a55")
         dr = ImageDraw.Draw(im)
         inner = size * (1 - 2 * pad_ratio)
         f = ImageFont.truetype(font_path, int(inner * 0.62))
@@ -468,7 +470,7 @@ def make_icons():
         dr.text((size / 2 - w / 2 - bb[0], cy - h / 2 - bb[1]), "S", font=f, fill="#ffffff")
         bw, bh = inner * 0.5, max(2, inner * 0.045)
         top = cy + h / 2 + inner * 0.08
-        dr.rectangle([size / 2 - bw / 2, top, size / 2 + bw / 2, top + bh], fill="#8fb0cf")
+        dr.rectangle([size / 2 - bw / 2, top, size / 2 + bw / 2, top + bh], fill="#bfe3d9")
         return im
     draw(512, 0.06).save(os.path.join(d, "icon-512.png"))
     draw(192, 0.06).save(os.path.join(d, "icon-192.png"))
