@@ -26,6 +26,9 @@ from reportlab.platypus import (BaseDocTemplate, CondPageBreak, Frame, KeepToget
 ROOT = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(ROOT, "guides")
 OUT = os.path.join(ROOT, "private", "guides")
+HOST = "www.sereina.fr"
+if "--site-url" in sys.argv:
+    HOST = sys.argv[sys.argv.index("--site-url") + 1].split("//", 1)[-1].rstrip("/")
 if "--out" in sys.argv:
     OUT = sys.argv[sys.argv.index("--out") + 1]
 FONTS = os.path.join(ROOT, "assets", "fonts")
@@ -168,7 +171,7 @@ def build(slug):
         c.setFillColor(ALERT_BG); c.rect(margin, 22 * mm, W - 2 * margin, 24 * mm, stroke=0, fill=1)
         c.setFillColor(ALERT_FG); c.setFont("PlexSB", 11.5); c.drawString(margin + 6 * mm, 38 * mm, "En cas d'urgence : 15 (SAMU) ou 3114 (prévention du suicide)")
         c.setFont("Plex", 10.5); c.drawString(margin + 6 * mm, 31.5 * mm, "Gratuits, jour et nuit. Un humain vous répond. Pour les sourds et malentendants : 114 par SMS.")
-        c.setFillColor(MUTED); c.setFont("Plex", 9); c.drawString(margin, 13 * mm, "www.sereina.fr")
+        c.setFillColor(MUTED); c.setFont("Plex", 9); c.drawString(margin, 13 * mm, HOST)
         c.restoreState()
 
     def on_page(c, d):
@@ -193,7 +196,7 @@ def build(slug):
              Paragraph(f"Un guide à lire à votre rythme et à imprimer. Édition {datetime.date.today().strftime('%m/%Y')}.", S["cover_m"]),
              NextPageTemplate("page"), PageBreak(), *toc, Spacer(1, 12), *intro, PageBreak(), *rest,
              Spacer(1, 14),
-             *callout("Pour en parler : les accompagnants d'écoute Sereina répondent jour et nuit sur www.sereina.fr/parler/. "
+             *callout("Pour en parler : les accompagnants d'écoute Sereina répondent jour et nuit sur " + HOST + "/parler/. "
                       "Ce sont des programmes d'intelligence artificielle, pas des soignants. Votre médecin traitant, un psychologue "
                       "ou le 3114 restent les bons interlocuteurs quand ça ne va vraiment pas.")]
     doc.build(story)

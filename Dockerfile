@@ -10,7 +10,7 @@ RUN pip install --no-cache-dir markdown pyyaml reportlab pillow
 ARG SITE_URL=https://www.votre-domaine.fr
 ARG PACKS="petit:20:490:Petit pack,moyen:60:1290:Pack confort,grand:150:2490:Grand pack"
 ENV PACKS=$PACKS
-RUN python3 build.py --site-url $SITE_URL && python3 build_guides.py --out /src/private/guides
+RUN python3 build.py --site-url $SITE_URL && python3 build_guides.py --site-url $SITE_URL --out /src/private/guides
 
 FROM node:20-slim
 WORKDIR /app/server

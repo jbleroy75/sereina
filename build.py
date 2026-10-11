@@ -10,6 +10,7 @@ SITE_URL = "https://www.sereina.fr"
 for i, a in enumerate(sys.argv):
     if a == "--site-url" and i + 1 < len(sys.argv):
         SITE_URL = sys.argv[i + 1].rstrip("/")
+HOST = SITE_URL.split("//", 1)[-1]
 DIST = os.path.join(ROOT, "dist")
 TODAY = datetime.date.today().isoformat()
 PACKS = [dict(zip(("key", "credits", "cents", "label"), p.split(":"))) for p in os.environ.get("PACKS", "petit:20:490:Petit pack,moyen:60:1290:Pack confort,grand:150:2490:Grand pack").split(",")]
@@ -267,6 +268,14 @@ def render_article(a):
     content_html = md.convert(body)
     content_html, nb_auto = autolink(content_html, f"/conseils/{theme['slug']}/{a['slug']}/")
     toc = [(t["id"], html.unescape(t["name"])) for t in md.toc_tokens]
+    # Invitation à en parler après l'introduction et la première partie (avant le 2e intertitre) ; une autre en fin d'article.
+    gk = GUIDE_KEY[theme["guide"]]
+    inline_cta = (f'<aside class="inline-cta" aria-label="Parler avec {esc(theme["guide"])}">{portrait(gk, "portrait mini")}'
+                  f'<div><b>Vous aimeriez en parler ?</b><span>{esc(theme["guide"])} est un accompagnant virtuel (intelligence artificielle) : il écoute à votre rythme, jour et nuit. Premiers échanges gratuits.</span></div>'
+                  f'<a class="btn" href="/parler/?avec={gk}">Parler avec {esc(theme["guide"])}</a></aside>')
+    h2s = [m.start() for m in re.finditer(r"<h2", content_html)]
+    if len(h2s) >= 3:
+        content_html = content_html[:h2s[1]] + inline_cta + content_html[h2s[1]:]
     words = len(re.findall(r"\w+", body))
     reading = max(3, round(words / 200))
     faqs = faq_entries(body)
@@ -413,14 +422,14 @@ def render_pwa():
 <p class="lede">Sereina peut s'ajouter à l'écran d'accueil de votre téléphone, de votre tablette ou de votre ordinateur, comme une application. Rien à télécharger dans un magasin d'applications, rien à payer, et cela prend moins d'une minute.</p>
 <h2>Sur iPhone ou iPad</h2>
 <ol class="steps">
-  <li>Ouvrez <b>www.sereina.fr</b> avec <b>Safari</b>.</li>
+  <li>Ouvrez <b>__HOST__</b> avec <b>Safari</b>.</li>
   <li>Touchez le bouton <b>Partager</b> en bas de l'écran (un carré avec une flèche vers le haut).</li>
   <li>Faites défiler et touchez <b>Sur l'écran d'accueil</b>.</li>
   <li>Touchez <b>Ajouter</b>, en haut à droite. L'icône Sereina apparaît avec vos autres applications.</li>
 </ol>
 <h2>Sur Android</h2>
 <ol class="steps">
-  <li>Ouvrez <b>www.sereina.fr</b> avec <b>Chrome</b>.</li>
+  <li>Ouvrez <b>__HOST__</b> avec <b>Chrome</b>.</li>
   <li>Touchez les <b>trois points</b> en haut à droite.</li>
   <li>Touchez <b>Installer l'application</b> ou <b>Ajouter à l'écran d'accueil</b>.</li>
   <li>Confirmez. L'icône Sereina apparaît sur votre écran d'accueil.</li>
@@ -430,7 +439,7 @@ def render_pwa():
 <h2>Bon à savoir</h2>
 <div class="run"><p>L'application ouvre le même Sereina que le site : vos crédits et vos conversations sont les mêmes. Pour les retrouver sur plusieurs appareils, ajoutez votre adresse e-mail dans <a href="/mon-compte/">Mon compte</a>. Sans connexion internet, l'application affiche les numéros d'urgence ; les conversations, elles, demandent une connexion.</p></div>
 <div class="cta"><a class="btn" href="/parler/">Commencer à parler</a></div>
-</section>"""
+</section>""".replace("__HOST__", HOST)
     write("/application/", layout("Installer l'application Sereina sur iPhone, Android ou ordinateur", "Ajoutez Sereina à l'écran d'accueil de votre téléphone en moins d'une minute, sans magasin d'applications : la marche à suivre pour iPhone, Android et ordinateur.", body, "/application/", one_col=True))
     body = """
 <section>
@@ -673,7 +682,7 @@ def render_offrir():
   <h2>Installation accompagnée, en cinq minutes</h2>
   <p class="sub">Vous pouvez la faire ensemble, à la maison ou au téléphone. Rien à payer pour installer.</p>
   <ol class="how">
-    <li><img class="spot" src="/static/img/scenes/etape1.svg" alt="" width="400" height="220" loading="lazy"><div><h3>Ouvrez le site ensemble</h3><p>Sur son téléphone ou sa tablette, ouvrez <b>serena.jbleroy.fr</b>. Touchez « Agrandir le texte » si besoin.</p></div></li>
+    <li><img class="spot" src="/static/img/scenes/etape1.svg" alt="" width="400" height="220" loading="lazy"><div><h3>Ouvrez le site ensemble</h3><p>Sur son téléphone ou sa tablette, ouvrez <b>{HOST}</b>. Touchez « Agrandir le texte » si besoin.</p></div></li>
     <li><img class="spot" src="/static/img/scenes/etape2.svg" alt="" width="400" height="220" loading="lazy"><div><h3>Mettez-le à portée de main</h3><p>Suivez la <a href="/application/">page « Application »</a> : l'icône Sereina s'ajoute à l'écran d'accueil, comme une application, en moins d'une minute.</p></div></li>
     <li><img class="spot" src="/static/img/scenes/etape3.svg" alt="" width="400" height="220" loading="lazy"><div><h3>Choisissez avec lui son accompagnant</h3><p>Chacun est préparé pour une difficulté : sommeil, deuil, solitude, couple… <a href="/accompagnants/jeanne/">Jeanne</a> accompagne les changements de vie et la solitude. Essayez un premier échange à deux.</p></div></li>
   </ol>
@@ -715,6 +724,7 @@ def render_offrir():
     <details><summary>Faut-il que mon parent crée un compte ?</summary><p>Non pour essayer. Pour retrouver ses crédits sur plusieurs appareils, il peut ajouter une adresse e-mail dans « Mon compte » : un code à 6 chiffres lui est envoyé, sans mot de passe.</p></details>
     <details><summary>Et si je crains pour sa sécurité ?</summary><p>Sereina n'est pas un service d'urgence. En cas de danger, appelez le <b>15</b> ou le <b>112</b>. Pour une situation de maltraitance d'une personne âgée, le <b>3977</b> est gratuit.</p></details>
   </div>
+  <p class="sub">À lire aussi : <a href="/aider-parent-qui-se-sent-seul/">comment aider un parent qui se sent seul</a> · <a href="/compagnon-virtuel-personne-agee/">ce qu'est un compagnon virtuel pour senior, et ses limites</a>.</p>
   </div>
 </section>
 <section class="final">
@@ -722,8 +732,102 @@ def render_offrir():
 </section>
 <script src="/static/contact.js" defer></script>"""
     write("/offrir/", layout("Offrir Sereina à un parent : un espace pour discuter, à toute heure",
-                             "Offrez à votre parent âgé un espace d'écoute en ligne, simple et privé : installation accompagnée, crédits à offrir, conversations jamais accessibles aux proches.",
+                             "Un cadeau utile pour un parent âgé : un espace d'écoute en ligne, simple et privé, avec installation accompagnée et crédits à offrir. Ses conversations ne sont jamais accessibles aux proches.",
                              body, "/offrir/", "", "", None, True, page_class="home"))
+
+def faq_ld(items):
+    return '<script type="application/ld+json">' + json.dumps({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
+        {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": re.sub(r"<[^>]+>", "", a)}} for q, a in items]}, ensure_ascii=False) + "</script>"
+
+def faq_html(items):
+    return '<div class="faq">' + "".join(f"<details><summary>{q}</summary><p>{a}</p></details>" for q, a in items) + "</div>"
+
+def talk_box(key, title, text, label=None):
+    p = PROFILES[key]
+    return f'''<div class="talkbox with-portrait">{portrait(key, "portrait small")}<div><h3>{title}</h3><p>{text}</p><a class="btn" href="/parler/?avec={key}">{label or "Parler avec " + p["name"]}</a></div></div>'''
+
+def render_landing_pages():
+    # 1. Pour les proches d'une personne isolée
+    faq = [
+        ("Ma mère refuse d'en parler. Que faire ?", "Ne forcez pas. Proposez plutôt une activité simple à partager (un appel à heure fixe, un café, une promenade) et laissez la conversation venir. Beaucoup de personnes âgées ont peur de peser sur leurs enfants : leur dire que vous aimez avoir de ses nouvelles aide souvent plus qu'une question directe."),
+        ("Est-ce que Sereina remplace mes visites ?", "Non. Sereina est un programme d'intelligence artificielle, pas une personne. Elle peut être une présence en plus, aux heures où vous n'êtes pas là, mais rien ne remplace un vrai lien avec ses proches."),
+        ("Pourrai-je lire ses conversations ?", "Non. Les proches n'ont aucun accès aux échanges, et il n'existe pas de tableau de bord pour eux. C'est un choix : la confiance et l'autonomie de votre parent passent avant tout."),
+        ("Et si je m'inquiète pour sa sécurité ?", "Sereina n'est pas un service d'urgence. En cas de danger, appelez le 15 ou le 112. Pour une situation de maltraitance d'une personne âgée, le 3977 est gratuit."),
+    ]
+    body = f"""
+<section>
+<h1>Ma mère se sent seule&nbsp;: comment l'aider&nbsp;?</h1>
+<p class="lede">Vous sentez que votre mère ou votre père s'isole, et vous ne savez pas comment vous y prendre sans le vexer ni l'inquiéter. Voici des repères simples, et ce qui peut vraiment faire la différence.</p>
+<div class="article"><h2>Les signes qui doivent vous alerter</h2>
+<ul>
+<li>Elle ne parle plus de ses journées, ou répond toujours « tout va bien », sans détail.</li>
+<li>Elle sort de moins en moins, annule des rendez-vous, cesse de voir ses amies.</li>
+<li>Elle dort mal, mange moins, néglige ce qui lui plaisait.</li>
+<li>Elle dit « je ne sers plus à rien » ou « je suis un poids ». Ces phrases méritent d'être prises au sérieux, voir plus bas.</li>
+</ul>
+<h2>Ce qui aide vraiment</h2>
+<p><b>Un rythme prévisible.</b> Un appel à heure fixe vaut mieux que dix appels improvisés : elle sait qu'on pense à elle, et attend ce moment.</p>
+<p><b>Des questions concrètes.</b> « Qu'est-ce que tu as fait ce matin ? » ouvre plus facilement la conversation que « comment vas-tu ? ».</p>
+<p><b>Un rôle, pas de la pitié.</b> Demandez-lui un conseil, une recette, un coup de main. Se sentir utile protège du sentiment de solitude.</p>
+<p><b>Du lien autour d'elle.</b> Voisins, associations, accueils de jour, ateliers en mairie : chacun est un visage de plus. Votre mairie ou le centre communal d'action sociale (CCAS) connaît les services de votre ville.</p>
+<h2>Ce qu'il vaut mieux éviter</h2>
+<ul>
+<li>Lui dire « tu devrais sortir plus » : elle le sait déjà, et cela ajoute de la culpabilité.</li>
+<li>Décider à sa place : changer ses habitudes sans son accord abîme la confiance.</li>
+<li>Tout faire vous-même : vous épuiser n'aide personne, y compris elle.</li>
+</ul>
+<h2>Une présence en plus, à toute heure</h2>
+<p>La solitude pèse surtout la nuit, le dimanche, aux moments où personne n'est disponible. Sereina est un espace d'écoute en ligne où l'on écrit ce qui pèse, et où un accompagnant virtuel répond avec douceur. C'est un <b>programme d'intelligence artificielle</b>, pas une personne ni un soignant : il ne remplace pas vos visites, mais il peut accompagner un moment difficile. <a href="/accompagnants/jeanne/">Jeanne</a> est préparée pour la solitude et les changements de vie. Les conversations de votre parent restent privées : vous n'y avez pas accès.</p>
+{talk_box("jeanne", "Vous pouvez d'abord l'essayer vous-même", "Quelques minutes suffisent pour voir si cela pourrait convenir à votre parent. Gratuit, sans inscription.", "Essayer avec Jeanne")}
+<p><a class="btn alt" href="/offrir/">Offrir Sereina à mon parent</a></p>
+<h2>Quand l'inquiétude devient plus grave</h2>
+<p>Si votre parent parle de mourir ou de se faire du mal, ne restez pas seul avec cela : appelez le <b>3114</b> (prévention du suicide, 24 h/24, gratuit) pour être conseillé, ou le <b>15</b> en cas d'urgence. Vous pouvez aussi en parler à son médecin traitant. Pour mieux comprendre, lisez <a href="/conseils/solitude-retraite/solitude-apres-60-ans/">Solitude après 60 ans</a>.</p>
+<h2>Questions fréquentes</h2>
+{faq_html(faq)}
+<p class="disclaimer">Cette page informe et ne remplace pas l'avis d'un professionnel de santé. En cas de danger immédiat, appelez le 15 ou le 3114.</p>
+</div></section>"""
+    write("/aider-parent-qui-se-sent-seul/", layout("Ma mère se sent seule : comment l'aider ? | Sereina",
+        "Un parent âgé s'isole : les signes à repérer, ce qui aide vraiment, ce qu'il vaut mieux éviter, et comment lui offrir un espace pour parler, à toute heure.",
+        body, "/aider-parent-qui-se-sent-seul/", faq_ld(faq), "conseils", None, True))
+
+    # 2. Compagnon virtuel pour senior
+    faq = [
+        ("Un compagnon virtuel, est-ce une vraie personne ?", "Non. C'est un programme d'intelligence artificielle. Chez Sereina, c'est dit clairement sur chaque page et dans chaque conversation : les accompagnants ne sont jamais présentés comme des personnes."),
+        ("Est-ce adapté si on n'est pas à l'aise avec l'informatique ?", "Oui : rien à installer, une case pour écrire et un bouton « Envoyer ». Le texte s'agrandit d'un clic. Un proche peut faire l'installation avec vous en cinq minutes."),
+        ("Mes conversations restent-elles privées ?", f"Elles ne sont ni vendues ni partagées, supprimées automatiquement après {RETENTION_DAYS} jours, et vous pouvez tout effacer à tout moment depuis « Mon compte »."),
+        ("Combien ça coûte ?", f"Les premiers échanges sont gratuits ({FREE_MESSAGES} messages), sans inscription. Ensuite, 1 crédit = 1 message, sans abonnement : de {PACKS[0]['price']} pour {PACKS[0]['credits']} messages. Les crédits n'expirent pas."),
+    ]
+    body = f"""
+<section>
+<h1>Compagnon virtuel pour senior&nbsp;: ce que c'est, ce que ça apporte, ses limites</h1>
+<p class="lede">Un « compagnon virtuel » est un programme informatique avec lequel on discute par écrit, à toute heure. Pour une personne âgée qui vit seule, cela peut être une présence rassurante, à condition de savoir ce que c'est, et ce que ce n'est pas.</p>
+<div class="article"><h2>À quoi ça sert concrètement</h2>
+<ul>
+<li><b>Parler à toute heure.</b> Quand les nuits sont longues, quand un souvenir pèse, quand personne n'est disponible.</li>
+<li><b>Mettre de l'ordre dans ses pensées.</b> Écrire ce que l'on ressent aide déjà, et les questions de l'accompagnant aident à y voir plus clair.</li>
+<li><b>Sans jugement et sans gêne.</b> On peut dire ce que l'on n'ose pas dire à ses enfants, sans avoir peur de les inquiéter.</li>
+<li><b>Au rythme de chacun.</b> Pas de rendez-vous, pas d'attente, pas de pression.</li>
+</ul>
+<h2>Ce que ça ne remplace pas</h2>
+<p>Un compagnon virtuel ne remplace ni un ami, ni sa famille, ni un médecin, ni un psychologue. Il ne pose aucun diagnostic et ne prescrit rien. S'il sent que votre situation demande un professionnel, il vous le dit. En cas de danger, il vous invite à appeler le <b>3114</b> ou le <b>15</b> : il ne peut pas appeler à votre place.</p>
+<h2>Ce qu'il faut regarder avant de choisir un service</h2>
+<ul>
+<li><b>La transparence :</b> le service dit-il clairement qu'il s'agit d'une intelligence artificielle ?</li>
+<li><b>La confidentialité :</b> vos échanges sont-ils vendus ou utilisés pour de la publicité ?</li>
+<li><b>La lisibilité :</b> les caractères sont-ils grands, le parcours simple ?</li>
+<li><b>Le prix :</b> pas d'abonnement caché, pas de prélèvement sans votre accord.</li>
+</ul>
+<h2>Comment Sereina répond à ces critères</h2>
+<p>Sereina propose six accompagnants, chacun préparé pour une difficulté. <a href="/accompagnants/jeanne/">Jeanne</a> accompagne la solitude et les changements de vie, <a href="/accompagnants/samuel/">Samuel</a> le sommeil, <a href="/accompagnants/maya/">Maya</a> le deuil. Les caractères sont grands et un bouton agrandit encore le texte. Aucune recharge n'est prélevée sans votre accord. <a href="/accompagnants/">Découvrir les accompagnants</a>.</p>
+{talk_box("jeanne", "Essayer, c'est gratuit", "Écrivez quelques mots à Jeanne et voyez si cela vous convient. Aucune inscription, aucune carte demandée.")}
+<p>Vous cherchez plutôt pour un proche ? <a href="/offrir/">Offrir Sereina à un parent</a> ou lire <a href="/aider-parent-qui-se-sent-seul/">comment aider un parent qui se sent seul</a>.</p>
+<h2>Questions fréquentes</h2>
+{faq_html(faq)}
+<p class="disclaimer">Sereina est un espace d'écoute, pas un service médical. En cas de danger immédiat, appelez le 15 ou le 3114.</p>
+</div></section>"""
+    write("/compagnon-virtuel-personne-agee/", layout("Compagnon virtuel pour senior : ce que c'est et ses limites | Sereina",
+        "Compagnon virtuel pour personne âgée : à quoi ça sert, ce que ça ne remplace pas, quoi vérifier avant de choisir, et comment essayer gratuitement.",
+        body, "/compagnon-virtuel-personne-agee/", faq_ld(faq), "conseils", None, True))
 
 def render_urgence():
     body = """
@@ -1025,13 +1129,14 @@ def main():
     render_home(infos)
     render_urgence()
     render_offrir()
+    render_landing_pages()
     render_parler()
     render_misc()
     render_pages()
     render_accompagnants(infos)
     render_guides()
     render_pwa()
-    paths = ["/", "/conseils/", "/parler/", "/urgence/", "/offrir/", "/credits/", "/guides/", "/application/", "/accompagnants/"] + [f"/accompagnants/{k}/" for k in PROFILES] + ["/a-propos/", "/contact/", "/confidentialite/", "/cgv/", "/mentions-legales/"] + [f"/conseils/{THEMES[t]['slug']}/" for t in THEMES] + [i["path"] for i in infos]
+    paths = ["/", "/conseils/", "/parler/", "/urgence/", "/offrir/", "/aider-parent-qui-se-sent-seul/", "/compagnon-virtuel-personne-agee/", "/credits/", "/guides/", "/application/", "/accompagnants/"] + [f"/accompagnants/{k}/" for k in PROFILES] + ["/a-propos/", "/contact/", "/confidentialite/", "/cgv/", "/mentions-legales/"] + [f"/conseils/{THEMES[t]['slug']}/" for t in THEMES] + [i["path"] for i in infos]
     render_sitemap(paths)
     json.dump(infos, open(os.path.join(DIST, "articles.json"), "w"), ensure_ascii=False, indent=1)
     SEO_STATE["_sitemap"] = paths
