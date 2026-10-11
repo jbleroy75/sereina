@@ -38,3 +38,18 @@
   });
   if(ios)setTimeout(function(){bar("Sur iPhone, vous pouvez ajouter Sereina à votre écran d'accueil.",null);},20000);
 })();
+(function(){
+  // Apparition douce au défilement. Rien n'est masqué sans JavaScript, ni ce qui est déjà visible au chargement.
+  if(!("IntersectionObserver" in window)||window.matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+  var sel=["main section>h2","main section>.sub","main .people>li","main .themes>li","main .list>li","main .how>li","main .numbers>li",
+    "main .nlbox","main .talkbox","main .guides>li","main .plan","main .faq","main .related","main .article>h2","main .article blockquote","main .profile-head","main .related-list>li"].join(",");
+  var els=[].slice.call(document.querySelectorAll(sel)),vh=window.innerHeight;
+  var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add("on");io.unobserve(e.target);}});},{rootMargin:"0px 0px -8% 0px"});
+  els.forEach(function(el){
+    if(el.getBoundingClientRect().top<vh*.92)return;
+    var sib=el.parentNode?[].indexOf.call(el.parentNode.children,el):0;
+    el.style.transitionDelay=Math.min(sib%6,5)*70+"ms";
+    el.classList.add("sr");io.observe(el);
+  });
+  window.addEventListener("beforeprint",function(){els.forEach(function(el){el.classList.add("on")})}); // impression : tout visible
+})();

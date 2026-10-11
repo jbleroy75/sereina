@@ -63,7 +63,7 @@
     if(!consent){pending=text;input.value="";consentModal.hidden=false;$("#ck18").focus();return;}
     if(me&&me.paywalled&&!me.auto_recharge){payModal.hidden=false;return;}
     input.value="";input.style.height="auto";add("me","Vous",text);if(CRISIS.test(text))crisis();
-    var el=add("thinking",GUIDES[guide][0],"Réfléchit…");
+    var el=add("thinking",GUIDES[guide][0],"Réfléchit");
     setBusy(true);ctl=new AbortController();
     try{
       var r=await fetch("/api/chat",{method:"POST",headers:hdrs({"Content-Type":"application/json"}),credentials:"same-origin",signal:ctl.signal,body:JSON.stringify({guide:guide,message:text})});

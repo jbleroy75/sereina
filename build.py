@@ -421,6 +421,7 @@ def render_pwa():
     write("/application/", layout("Installer l'application Sereina sur iPhone, Android ou ordinateur", "Ajoutez Sereina à l'écran d'accueil de votre téléphone en moins d'une minute, sans magasin d'applications : la marche à suivre pour iPhone, Android et ordinateur.", body, "/application/", one_col=True))
     body = """
 <section>
+<figure class="breath small" aria-hidden="true"><div class="rings"><span></span><span></span><span></span></div><figcaption><span class="in">Inspirez</span><span class="out">Soufflez</span></figcaption></figure>
 <h1>Vous n'êtes pas connecté à internet</h1>
 <p class="lede">Sereina a besoin d'une connexion pour les conversations. Vérifiez le Wi-Fi ou les données mobiles, puis réessayez.</p>
 <div class="alert"><b>En cas d'urgence, le téléphone fonctionne sans internet :</b> 15 (SAMU), 3114 (prévention du suicide), 112 (urgences européennes), 114 par SMS. Gratuits, jour et nuit.</div>
@@ -522,8 +523,11 @@ def render_home(all_infos):
            ("conseils", "Conseils gratuits"), ("guides", "Guides à télécharger"), ("urgence", "En cas d'urgence"), ("questions", "Questions fréquentes")]
     body = f"""
 <section id="accueil">
-  <h1>Parler de ce qui vous pèse, simplement.</h1>
-  <p class="lede">Un souci au travail, une inquiétude pour un proche, des nuits difficiles, le sentiment d'être seul. Sur Sereina, vous l'écrivez avec vos mots et un accompagnant d'écoute vous répond. Sans inscription, de jour comme de nuit.</p>
+  <div class="hero">
+  <div><h1>Parler de ce qui vous pèse, simplement.</h1>
+  <p class="lede">Un souci au travail, une inquiétude pour un proche, des nuits difficiles, le sentiment d'être seul. Sur Sereina, vous l'écrivez avec vos mots et un accompagnant d'écoute vous répond. Sans inscription, de jour comme de nuit.</p></div>
+  <figure class="breath" aria-hidden="true"><div class="rings"><span></span><span></span><span></span></div><figcaption><span class="in">Inspirez</span><span class="out">Soufflez</span></figcaption></figure>
+  </div>
   <div class="run"><p>Les accompagnants sont des programmes d'intelligence artificielle, préparés pour écouter avec respect, aider à y voir plus clair et indiquer vers qui se tourner quand une aide humaine est nécessaire. Ils ne sont pas des psychologues ni des médecins.</p></div>
   <div class="cta"><a class="btn" href="/parler/">Commencer à parler</a></div>
   <div class="alert"><b>Sereina n'est pas un service médical.</b> Aucun diagnostic, aucun traitement. Si vous êtes en danger ou pensez à vous faire du mal, appelez le 15 ou le 3114, gratuits et joignables 24 h/24.</div>

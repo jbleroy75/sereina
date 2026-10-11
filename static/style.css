@@ -280,3 +280,75 @@ ul.plain.big li{margin-bottom:8px}
 #mailCode{max-width:12em;letter-spacing:.2em;font-family:var(--display)}
 [hidden]{display:none!important}
 @media (max-width:640px){.topnav{gap:6px 14px;font-size:.8em}.topnav .btn.small{padding:6px 10px;min-height:34px}.sizebtn{padding:4px 8px}.masthead .in{padding:10px 16px}}
+
+/* ---------- Animations : calmes, lentes, jamais indispensables ---------- */
+:root{--ease:cubic-bezier(.22,.61,.36,1)}
+@keyframes sr-fade{from{opacity:0}to{opacity:1}}
+@keyframes sr-rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes sr-pop{from{opacity:0;transform:translateY(16px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes sr-dots{0%{content:""}25%{content:"."}50%{content:".."}75%,100%{content:"..."}}
+
+/* Arrivée de la page */
+main>section:first-child,main>.crumbs,main>.article-head{animation:sr-rise .6s var(--ease) both}
+main>.article-head{animation-delay:.06s}
+
+/* Apparition au défilement (activée par site.js, seulement pour ce qui est hors de l'écran au chargement) */
+.sr{opacity:0;transform:translateY(14px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
+.sr.on{opacity:1;transform:none}
+
+/* Survols : doux */
+a,button,.btn,.ghost{transition:color .2s,background-color .2s,border-color .2s,filter .2s,transform .2s var(--ease),box-shadow .2s}
+.btn:active{transform:translateY(1px)}
+.people a,.people button{transition:background-color .25s,border-color .25s}
+.people a:hover{border-left-color:var(--line)}
+.people .go{transition:transform .3s var(--ease)}
+.people a:hover .go{transform:translateX(4px)}
+.people .portrait{transition:transform .5s var(--ease)}
+.people a:hover .portrait{transform:scale(1.03)}
+.themes li,.list li{transition:background-color .25s}
+.themes li:hover,.list li:hover{background:linear-gradient(90deg,var(--paper),transparent 85%)}
+.toc a{transition:color .2s,border-color .2s}
+.pack{transition:border-color .2s,background-color .2s,box-shadow .2s}
+.plan{transition:transform .3s var(--ease),box-shadow .3s}
+.plan:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(20,28,36,.08)}
+.nlcover{transition:transform .5s var(--ease)}
+.nlbox:hover .nlcover,.guides .guide:hover .nlcover{transform:rotate(-2deg) translateY(-3px)}
+.faq details[open] p{animation:sr-rise .35s var(--ease)}
+.faq summary{transition:color .2s}
+
+/* Fenêtres */
+.modal:not([hidden]){animation:sr-fade .25s ease-out}
+.modal:not([hidden]) .modal-box{animation:sr-pop .35s var(--ease)}
+
+/* Chat */
+.turn{animation:sr-rise .35s var(--ease)}
+.turn.thinking::after{content:"";display:inline-block;width:1.4em;text-align:left;animation:sr-dots 1.6s steps(1) infinite}
+.turn.crisis{animation:sr-rise .4s var(--ease)}
+.installbar{animation:sr-pop .45s var(--ease)}
+.nlmsg.ok,.nlmsg.err,.sub.ok,.sub.err{animation:sr-rise .3s var(--ease)}
+
+/* Accueil : cercle de respiration (inspirer 4 s, souffler 6 s) */
+.hero{display:grid;grid-template-columns:minmax(0,1fr) 170px;gap:28px;align-items:center}
+.breath{margin:0;display:grid;justify-items:center;gap:10px;font-family:var(--display);font-size:.78em;color:var(--muted)}
+.breath .rings{position:relative;width:150px;height:150px}
+.breath .rings span{position:absolute;inset:0;border-radius:50%;border:1px solid var(--steel);opacity:.18;animation:sr-breathe 10s var(--ease) infinite}
+.breath .rings span:nth-child(2){inset:22px;opacity:.28;animation-delay:.25s}
+.breath .rings span:nth-child(3){inset:44px;opacity:1;border:0;background:var(--mist);animation-delay:.5s}
+.breath figcaption{position:relative;height:1.4em;width:8em;text-align:center}
+.breath figcaption span{position:absolute;inset:0;animation:sr-say 10s linear infinite}
+.breath figcaption .out{animation-name:sr-say2}
+.breath.small{justify-items:start;margin-bottom:18px}
+.breath.small .rings{width:90px;height:90px}
+.breath.small .rings span:nth-child(2){inset:13px}.breath.small .rings span:nth-child(3){inset:26px}
+.breath.small figcaption{text-align:left}
+@keyframes sr-breathe{0%{transform:scale(.82)}40%{transform:scale(1.04)}100%{transform:scale(.82)}}
+@keyframes sr-say{0%,36%{opacity:1}42%,96%{opacity:0}100%{opacity:1}}
+@keyframes sr-say2{0%,38%{opacity:0}44%,94%{opacity:1}100%{opacity:0}}
+@media (max-width:640px){.hero{grid-template-columns:1fr}.hero .breath{display:none}}
+
+/* Mouvement réduit : tout s'arrête (réglage du système respecté) */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+  .sr{opacity:1;transform:none}
+  .breath{display:none}
+}
