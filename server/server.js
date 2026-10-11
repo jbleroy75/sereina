@@ -12,6 +12,7 @@ import { requestCode, verifyCode, setMarketingOptin, maskEmail, purgeCodes, emai
 import { claimTrial, claimEmailForTrial, purgeClaims } from "./antiabuse.js";
 import { sendWelcome, afterPaidMessage, runLifecycle, unsubscribeUser } from "./lifecycle.js";
 import * as NL from "./newsletter.js";
+import { reviewEligible, submitReview, listPublic, deleteByUser } from "./reviews.js";
 import { runCanary, lastRuns } from "./canary.js";
 import { admin } from "./admin.js";
 import { securityHeaders, csrfOrigin, stripHtml } from "./security/headers.js";
@@ -63,6 +64,8 @@ const checkoutLimiter = new RateLimiter({ limit: 10, windowMs: 60 * 60 * 1000 })
 app.use("/api/chat", rateLimit(chatLimiter, req => req.signedCookies.sid || clientIp(req), "Trop de messages d'un coup. Attendez un instant."));
 app.use("/api/contact", rateLimit(contactLimiter, clientIp));
 app.use("/api/checkout", rateLimit(checkoutLimiter, req => req.signedCookies.sid || clientIp(req)));
+const reviewLimiter = new RateLimiter({ limit: 4, windowMs: 60 * 60 * 1000 });
+app.use("/api/review", rateLimit(reviewLimiter, req => req.signedCookies.sid || clientIp(req)));
 const authLimiter = new RateLimiter({ limit: 10, windowMs: 15 * 60 * 1000 });
 const nlLimiter = new RateLimiter({ limit: 6, windowMs: 60 * 60 * 1000 });
 app.use("/api/auth", rateLimit(authLimiter, clientIp, "Trop de tentatives. Patientez quelques minutes."));
@@ -158,7 +161,10 @@ app.post("/api/chat", async (req, res) => {
     await riskP;
     const after = q.getUser.get(u.id);
     if (creditUsed) afterPaidMessage(after);
-    send({ done: true, credits: after.credits, free: !creditUsed, safety: safetyPass || undefined, trial_denied: trial && !trial.allowed ? true : undefined });
+    // Demande d'avis : jamais en cas de détresse, jamais à une personne passée sans crédit par le filet de sécurité.
+    let askReview = false;
+    if (!safetyPass && reviewEligible(after)) { askReview = true; q.logEvent.run(u.id, "review_asked", guide, now()); }
+    send({ done: true, credits: after.credits, free: !creditUsed, safety: safetyPass || undefined, trial_denied: trial && !trial.allowed ? true : undefined, review: askReview || undefined });
   } catch (e) {
     if (!ac.signal.aborted) { console.error("chat error", e.message); send({ error: "La réponse a été interrompue. Vous pouvez renvoyer votre message. En cas d'urgence : 15 ou 3114." }); }
   } finally { inflight--; res.end(); }
@@ -217,6 +223,20 @@ app.post("/api/consent", (req, res) => {
   db.prepare("UPDATE users SET consent_at = COALESCE(consent_at, ?) WHERE id = ?").run(now(), u.id);
   q.logEvent.run(u.id, "consent", null, now());
   res.json({ ok: true });
+});
+
+// ---------- Avis ----------
+// Public : seulement les avis validés par l'équipe, avec l'accord de leur auteur. Aucune donnée personnelle autre que le prénom choisi.
+app.get("/api/reviews", (req, res) => {
+  res.setHeader("Cache-Control", "public, max-age=300");
+  res.json({ reviews: listPublic({ guide: String(req.query.guide || ""), limit: 12 }) });
+});
+app.post("/api/review", (req, res) => {
+  const u = getUser(req, res);
+  const r = submitReview({ user: u, guide: String(req.body?.guide || ""), rating: req.body?.rating, comment: req.body?.comment, name: req.body?.name, consent: !!req.body?.consent });
+  if (r.error) return res.status(400).json(r);
+  q.logEvent.run(u.id, "review_sent", null, now());
+  res.json(r);
 });
 
 // ---------- Compte par code e-mail ----------
@@ -294,6 +314,7 @@ app.post("/api/me/delete", (req, res) => {
   db.prepare("DELETE FROM messages WHERE user_id = ?").run(u.id);
   db.prepare("DELETE FROM alerts WHERE user_id = ?").run(u.id);
   db.prepare("DELETE FROM purchases WHERE user_id = ?").run(u.id);
+  deleteByUser(u.id);
   for (const sql of ["DELETE FROM email_log WHERE user_id = ?", "DELETE FROM events WHERE user_id = ?", "UPDATE ai_usage SET user_id = NULL WHERE user_id = ?"]) { try { db.prepare(sql).run(u.id); } catch {} }
   if (u.email_hash) { try { db.prepare("DELETE FROM login_codes WHERE email_hash = ?").run(u.email_hash); } catch {} NL.deleteByEmailHash(u.email_hash); }
   db.prepare("DELETE FROM users WHERE id = ?").run(u.id);

@@ -13,6 +13,7 @@ import { USD_EUR, priceFor } from "./costs.js";
 import { runCanary, lastRuns } from "./canary.js";
 import { runLifecycle } from "./lifecycle.js";
 import * as NL from "./newsletter.js";
+import * as RV from "./reviews.js";
 
 const LEVELS = ["vert", "jaune", "orange", "rouge"];
 const COLORS = { vert: "#2e7d4f", jaune: "#b8860b", orange: "#d2691e", rouge: "#b22222" };
@@ -89,7 +90,7 @@ pre.full{white-space:pre-wrap;background:var(--mist);padding:14px;max-width:900p
 .reply{background:var(--paper);border-left:3px solid var(--steel);padding:12px 16px;max-width:900px;white-space:pre-wrap;font-family:var(--body);font-size:16px}
 code.codes{display:block;white-space:pre;font-size:16px;line-height:1.7;padding:12px;background:var(--mist);margin:10px 0;max-width:320px}
 </style></head><body><div class="wrap">
-${req?.admin && !req.admin.pending_2fa ? `<p class="nav"><a href="/admin/">Utilisateurs</a> · <a href="/admin/alertes">Alertes ouvertes</a>${A.hasRole(req.admin, "admin") ? ' · <a href="/admin/finances">Revenus et coûts</a> · <a href="/admin/newsletter">Newsletter</a> · <a href="/admin/accompagnants">Accompagnants</a> · <a href="/admin/journal">Journal</a>' : ""}${A.hasRole(req.admin, "owner") ? ' · <a href="/admin/equipe">Équipe</a>' : ""} · <a href="/admin/securite">Mon compte</a> · <a href="/">Site</a> <span class="who">${esc(req.admin.name || req.admin.email)} (${ROLE_LABEL[req.admin.role] || req.admin.role})</span> <form method="post" action="/admin/logout" class="out"><button class="ghost" type="submit">Déconnexion</button></form></p>` : ""}
+${req?.admin && !req.admin.pending_2fa ? `<p class="nav"><a href="/admin/">Utilisateurs</a> · <a href="/admin/alertes">Alertes ouvertes</a>${A.hasRole(req.admin, "admin") ? ' · <a href="/admin/finances">Revenus et coûts</a> · <a href="/admin/avis">Avis' + (RV.counts().pending ? ` (${RV.counts().pending})` : "") + '</a> · <a href="/admin/newsletter">Newsletter</a> · <a href="/admin/accompagnants">Accompagnants</a> · <a href="/admin/journal">Journal</a>' : ""}${A.hasRole(req.admin, "owner") ? ' · <a href="/admin/equipe">Équipe</a>' : ""} · <a href="/admin/securite">Mon compte</a> · <a href="/">Site</a> <span class="who">${esc(req.admin.name || req.admin.email)} (${ROLE_LABEL[req.admin.role] || req.admin.role})</span> <form method="post" action="/admin/logout" class="out"><button class="ghost" type="submit">Déconnexion</button></form></p>` : ""}
 ${body}</div></body></html>`;
 }
 
@@ -482,6 +483,59 @@ admin.post("/finances/relances", need("admin"), (req, res) => {
   const r = runLifecycle({ force: true });
   A.audit("lifecycle_run", { adminId: req.admin.admin_id, metadata: r, ip: clientIp(req) });
   res.redirect("/admin/finances?m=" + encodeURIComponent(`Relances envoyées : ${r.inactive || 0} (inactivité), ${r.winback || 0} (clients partis).`));
+});
+
+// ---------- Avis ----------
+const GUIDE_NAMES = { clara: "Clara", samuel: "Samuel", ines: "Inès", theo: "Théo", maya: "Maya", jeanne: "Jeanne" };
+const stars = n => "★".repeat(n) + "☆".repeat(5 - n);
+admin.get("/avis", need("admin"), (req, res) => {
+  const tab = ["pending", "approved", "rejected", "retours"].includes(req.query.t) ? req.query.t : "pending";
+  const c = RV.counts(), st = RV.stats();
+  const rows = (tab === "retours" ? RV.feedbackOnly() : RV.listByStatus(tab)).map(r => {
+    const actions = tab === "retours" ? "" : `<form method="post" action="/admin/avis/${r.id}/${r.status === "approved" ? "refuser" : "approuver"}" style="display:inline">${csrf(req)}${r.status === "approved" ? `<select name="reason">${Object.entries(RV.REJECT_REASONS).map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join("")}</select> <button class="ghost" type="submit">Retirer du site</button>` : `<button class="btn" type="submit">Publier</button>`}</form>
+      ${r.status === "pending" ? `<form method="post" action="/admin/avis/${r.id}/refuser" style="display:inline-block;margin-top:6px">${csrf(req)}<select name="reason">${Object.entries(RV.REJECT_REASONS).map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join("")}</select> <button class="ghost" type="submit">Ne pas publier</button></form>` : ""}
+      <form method="post" action="/admin/avis/${r.id}/supprimer" style="display:inline-block;margin-top:6px">${csrf(req)}<button class="ghost" type="submit">Supprimer définitivement</button></form>`;
+    return `<tr><td>${fmt(r.created_at)}</td><td>${stars(r.rating)}</td><td>${esc(GUIDE_NAMES[r.guide] || "")}</td><td>${esc(r.display_name || "(anonyme)")}</td><td style="max-width:520px;white-space:pre-wrap">${esc(r.comment || "(note seule)")}</td><td>${r.source === "manuel" ? `Saisi par l'équipe<br><small>${esc(r.origin_note || "")}</small>` : "Chat"}${r.status === "rejected" ? `<br><small>${esc(RV.REJECT_REASONS[r.reject_reason] || "")}</small>` : ""}</td><td>${actions}</td></tr>`;
+  }).join("") || '<tr><td colspan="7">Aucun avis ici pour le moment.</td></tr>';
+  res.send(page("Avis", `<h1>Avis</h1>
+  ${req.query.m ? `<div class="ok">${esc(req.query.m)}</div>` : ""}
+  <p style="color:var(--muted);max-width:820px">Les avis viennent de personnes qui ont réellement utilisé Sereina : après quelques échanges, le chat leur propose de laisser une note et, si elles le souhaitent, un commentaire publiable (prénom seulement). Rien n'est affiché sans votre validation et sans l'accord de la personne. <b>Le texte n'est jamais modifié.</b> On ne retire un avis que pour un motif de la liste (injure, identification d'un tiers, hors sujet, détail de santé), jamais parce qu'il est critique.</p>
+  <div class="kpis"><div><b>${c.pending}</b><span>à relire</span></div><div><b>${c.approved}</b><span>publiés</span></div><div><b>${c.rejected}</b><span>non publiés</span></div><div><b>${st.n}</b><span>retours reçus (chat)</span></div><div><b>${st.avg ?? "–"}</b><span>note moyenne interne</span></div></div>
+  <p class="tabs">${[["pending", "À relire"], ["approved", "Publiés"], ["rejected", "Non publiés"], ["retours", "Retours sans publication"]].map(([k, l]) => `<a href="/admin/avis?t=${k}"${tab === k ? ' class="on"' : ""}>${l}</a>`).join("")}</p>
+  <table><thead><tr><th>Date</th><th>Note</th><th>Accompagnant</th><th>Prénom</th><th>Commentaire</th><th>Origine</th><th></th></tr></thead><tbody>${rows}</tbody></table>
+  <h2>Ajouter un avis réellement reçu</h2>
+  <p style="color:var(--muted);max-width:820px">Pour un avis reçu par e-mail, courrier ou de vive voix : recopiez-le tel qu'il a été écrit, sans le corriger ni l'embellir. L'attestation d'accord est obligatoire ; l'origine est conservée en interne.</p>
+  <form method="post" action="/admin/avis/ajouter" class="prompt-ed">${csrf(req)}
+    <label><b>Prénom (tel qu'il doit apparaître)</b><input name="name" maxlength="30" style="max-width:300px"></label>
+    <label><b>Note</b><select name="rating" required><option value="">Choisir</option>${[5, 4, 3, 2, 1].map(n => `<option value="${n}">${n} sur 5</option>`).join("")}</select></label>
+    <label><b>Accompagnant concerné (facultatif)</b><select name="guide"><option value="">Aucun en particulier</option>${Object.entries(GUIDE_NAMES).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select></label>
+    <label><b>Texte de l'avis, tel que reçu</b><textarea name="comment" rows="5" required minlength="10" maxlength="1000"></textarea></label>
+    <label><b>D'où vient cet avis ?</b><input name="origin" required maxlength="200" placeholder="Ex. : e-mail reçu le 12/11, de vive voix à une démonstration…" style="max-width:600px"></label>
+    <label class="check" style="display:flex;gap:8px"><input type="checkbox" name="attest" required> J'atteste que cet avis est authentique et que la personne a accepté sa publication avec ce prénom.</label>
+    <button class="btn" type="submit">Publier cet avis</button></form>`, false, req));
+});
+const reviewDone = (req, res, m) => res.redirect("/admin/avis?m=" + encodeURIComponent(m));
+admin.post("/avis/ajouter", need("admin"), (req, res) => {
+  if (!req.body.attest) return reviewDone(req, res, "L'attestation d'accord est obligatoire.");
+  const r = RV.addManual({ name: req.body.name, rating: req.body.rating, comment: req.body.comment, guide: req.body.guide, origin: req.body.origin, adminName: req.admin.name || req.admin.email });
+  if (r.error) return reviewDone(req, res, r.error);
+  A.audit("review_added_manual", { adminId: req.admin.admin_id, target: String(r.id), ip: clientIp(req) });
+  reviewDone(req, res, "Avis publié.");
+});
+admin.post("/avis/:id/approuver", need("admin"), (req, res) => {
+  const ok = RV.moderate(Number(req.params.id), "approved", req.admin.name || req.admin.email);
+  if (ok) A.audit("review_approved", { adminId: req.admin.admin_id, target: req.params.id, ip: clientIp(req) });
+  reviewDone(req, res, ok ? "Avis publié." : "Impossible : pas d'accord de publication ou pas de texte.");
+});
+admin.post("/avis/:id/refuser", need("admin"), (req, res) => {
+  const ok = RV.moderate(Number(req.params.id), "rejected", req.admin.name || req.admin.email, String(req.body.reason || ""));
+  if (ok) A.audit("review_rejected", { adminId: req.admin.admin_id, target: req.params.id, metadata: { reason: req.body.reason }, ip: clientIp(req) });
+  reviewDone(req, res, ok ? "Avis non publié." : "Avis introuvable.");
+});
+admin.post("/avis/:id/supprimer", need("admin"), (req, res) => {
+  const ok = RV.removeReview(Number(req.params.id));
+  if (ok) A.audit("review_deleted", { adminId: req.admin.admin_id, target: req.params.id, ip: clientIp(req) });
+  reviewDone(req, res, ok ? "Avis supprimé." : "Avis introuvable.");
 });
 
 // ---------- Newsletter ----------

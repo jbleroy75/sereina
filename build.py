@@ -324,6 +324,17 @@ def render_article(a):
 
 # ---------- Lettre et guides à télécharger ----------
 NL_SCRIPT = '<script src="/static/newsletter.js" defer></script>'
+REVIEWS_SCRIPT = '<script src="/static/reviews.js" defer></script>'
+REVIEWS_NOTE = "Avis laissés par des personnes qui ont utilisé Sereina, publiés avec leur accord et relus par l'équipe. Nous écartons seulement les messages injurieux, ceux qui permettent d'identifier quelqu'un ou qui n'ont aucun rapport avec Sereina."
+def reviews_block(title, guide="", cls=""):
+    g = f' data-guide="{guide}"' if guide else ""
+    return f'''<section class="{cls}" id="avis" data-reviews{g} hidden>
+  <div class="wrap">
+  <h2>{title}</h2>
+  <p class="sub">{REVIEWS_NOTE}</p>
+  <ul class="reviews" aria-live="polite"></ul>
+  </div>
+</section>'''
 NL_CONSENT = ('<p class="fine">En vous inscrivant, vous recevez le guide puis la lettre Sereina, une à deux fois par mois. '
               'Un lien de désinscription figure dans chaque e-mail. Votre adresse n’est jamais vendue ni partagée. '
               '<a href="/confidentialite/#lettre">En savoir plus</a>.</p>')
@@ -567,7 +578,8 @@ def render_home(all_infos):
   </ol>
   </div>
 </section>
-<section class="band" id="confiance">
+{reviews_block("Ce qu'en disent celles et ceux qui l'ont utilisée", cls="band")}
+<section id="confiance">
   <div class="wrap">
   <h2>Ce que Sereina est, et ce qu'elle n'est pas</h2>
   <div class="isnot">
@@ -624,7 +636,7 @@ def render_home(all_infos):
         "description": "Espace d'écoute en ligne avec des accompagnants d'intelligence artificielle, et des conseils gratuits pour aller mieux."}, ensure_ascii=False) + "</script>"
     write("/", layout("Sereina, espace d'écoute : parler de ce qui vous pèse",
                       "Sereina : un espace d'écoute en ligne, jour et nuit. Écrivez ce qui vous pèse, un accompagnant d'écoute vous répond. Conseils gratuits sur l'anxiété, le sommeil, le travail, le couple, le deuil.",
-                      body, "/", extra + NL_SCRIPT, "", None, True, page_class="home"))
+                      body, "/", extra + NL_SCRIPT + REVIEWS_SCRIPT, "", None, True, page_class="home"))
 
 def render_urgence():
     body = """
@@ -734,8 +746,9 @@ def render_accompagnants(all_infos):
   <h2>Conseils sur ce thème</h2>
   <ul class="related-list">{arts_html}</ul>
   <p class="sub"><a href="/conseils/{theme['slug']}/">Tous les articles « {esc(theme['name'])} »</a></p>
-</section>"""
-        write(path, layout(f"{p['name']}, accompagnant d'écoute : {p['spec']} | Sereina", f"{p['name']} est l'accompagnant d'écoute Sereina pour {p['spec'].lower()}. {p['short']} Programme d'intelligence artificielle, disponible jour et nuit.", body, path, nav_on="accompagnants", one_col=True))
+</section>
+{reviews_block("Ce qu'en disent ses utilisateurs", guide=k, cls="profile-reviews")}"""
+        write(path, layout(f"{p['name']}, accompagnant d'écoute : {p['spec']} | Sereina", f"{p['name']} est l'accompagnant d'écoute Sereina pour {p['spec'].lower()}. {p['short']} Programme d'intelligence artificielle, disponible jour et nuit.", body, path, REVIEWS_SCRIPT, nav_on="accompagnants", one_col=True))
 
 def render_pages():
     # Crédits (tarifs)

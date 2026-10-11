@@ -511,6 +511,30 @@ ul.plain.big li{margin-bottom:10px}
   .home footer{padding-inline:18px}
 }
 
+/* ---------- Avis ---------- */
+.reviewbox{max-width:100%!important;align-self:stretch!important;background:var(--paper)!important;border:2px solid var(--steel)!important;padding:20px!important;white-space:normal!important}
+.reviewbox fieldset{border:0;margin:0 0 14px;padding:0}
+.reviewbox legend{font-family:var(--display);font-weight:700;font-size:1.15em;padding:0;margin-bottom:12px}
+.rv-pick{display:flex;gap:8px;flex-wrap:wrap}
+.rv-pick label{position:relative;cursor:pointer}
+.rv-pick input{position:absolute;opacity:0}
+.rv-pick span{display:grid;place-items:center;min-width:58px;min-height:58px;border:2px solid var(--line);border-radius:14px;font-family:var(--display);font-size:1.1em;background:var(--paper);color:var(--muted)}
+.rv-pick span b{font-size:1.1em;line-height:1}
+.rv-pick input:checked+span{background:var(--steel);border-color:var(--steel);color:var(--steel-ink)}
+.rv-pick input:focus-visible+span{outline:4px solid #e0a52b;outline-offset:3px}
+.rv-legend{display:flex;justify-content:space-between;max-width:330px;font-family:var(--display);font-size:.85em;color:var(--muted);margin:8px 0 0}
+.rv-f{display:grid;gap:6px;font-family:var(--display);margin:14px 0}
+.rv-f textarea,.rv-f input{font:inherit;padding:12px 14px;border:2px solid #b9ab97;border-radius:12px;background:var(--paper);color:var(--fg);min-height:52px}
+.reviewbox .check{font-size:.95em}
+.rv-err{color:var(--alert-fg);background:var(--alert-bg);border:1px solid var(--alert-line);border-radius:12px;padding:10px 14px;margin:8px 0;font-family:var(--display);font-size:.95em}
+.reviews{list-style:none;margin:28px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}
+.reviews figure{margin:0;height:100%;padding:24px;background:var(--paper);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:12px}
+.rv-stars{color:#b87500;font-size:1.3em;letter-spacing:.1em}
+.reviews blockquote{margin:0;padding:0;border:0;background:none;color:var(--fg);font-size:1.02em;line-height:1.65;flex:1}
+.reviews figcaption{font-family:var(--display);font-weight:700;color:var(--steel);font-size:.95em}
+.profile-reviews{padding-block:8px 24px}
+.profile-reviews h2{font-size:1.4em}
+
 /* ---------- Animations : calmes, lentes, jamais indispensables ---------- */
 :root{--ease:cubic-bezier(.22,.61,.36,1)}
 @keyframes sr-fade{from{opacity:0}to{opacity:1}}

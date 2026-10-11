@@ -58,6 +58,36 @@
   stopBtn.addEventListener("click",function(){if(ctl)ctl.abort();});
   input.addEventListener("input",function(){input.style.height="auto";input.style.height=Math.min(input.scrollHeight,220)+"px";});
 
+  // Demande d'avis : proposée une fois, après quelques échanges, jamais en cas de détresse (décidé côté serveur).
+  function askReview(){
+    if(log.querySelector(".reviewbox"))return;
+    var d=document.createElement("div");d.className="turn reviewbox";
+    d.innerHTML='<form novalidate><fieldset><legend>Cet échange vous a-t-il aidé ?</legend>'
+      +'<div class="rv-pick" role="radiogroup" aria-label="Votre note de 1 à 5">'
+      +[1,2,3,4,5].map(function(n){return '<label><input type="radio" name="rv" value="'+n+'"><span><b>'+n+'</b>★</span></label>';}).join("")
+      +'</div><p class="rv-legend"><span>1 : pas du tout</span><span>5 : beaucoup</span></p></fieldset>'
+      +'<label class="rv-f">Un mot sur votre expérience (facultatif)<textarea name="comment" rows="3" maxlength="1000"></textarea></label>'
+      +'<label class="rv-f">Votre prénom (facultatif)<input name="name" maxlength="30" autocomplete="off"></label>'
+      +'<label class="check"><input type="checkbox" name="consent"> J\'accepte que ce commentaire soit publié sur le site, avec mon prénom seulement, après relecture par l\'équipe. Évitez de donner votre nom de famille, votre ville ou votre employeur.</label>'
+      +'<p class="rv-err" role="alert" hidden></p>'
+      +'<div class="modal-acts"><button class="btn" type="submit">Envoyer mon avis</button><button class="ghost" type="button" data-later>Plus tard</button></div></form>';
+    log.appendChild(d);log.scrollTop=log.scrollHeight;
+    var f=d.querySelector("form"),err=d.querySelector(".rv-err");
+    d.querySelector("[data-later]").addEventListener("click",function(){d.remove();});
+    f.addEventListener("submit",function(e){
+      e.preventDefault();
+      var r=f.querySelector('input[name="rv"]:checked');
+      if(!r){err.textContent="Choisissez une note de 1 à 5.";err.hidden=false;return;}
+      err.hidden=true;
+      fetch("/api/review",{method:"POST",headers:hdrs({"Content-Type":"application/json"}),credentials:"same-origin",body:JSON.stringify({guide:guide,rating:Number(r.value),comment:f.querySelector('[name="comment"]').value,name:f.querySelector('[name="name"]').value,consent:f.querySelector('[name="consent"]').checked})})
+        .then(function(x){return x.json().then(function(j){return{ok:x.ok,j:j}})})
+        .then(function(o){
+          if(!o.ok){err.textContent=o.j.error||"Votre avis n'a pas pu être envoyé.";err.hidden=false;return;}
+          d.remove();add("sys","","Merci, votre avis a bien été reçu."+(o.j.publishable?" Il ne sera publié qu'après relecture par l'équipe.":""));
+        }).catch(function(){err.textContent="Votre avis n'a pas pu être envoyé. Réessayez dans un instant.";err.hidden=false;});
+    });
+  }
+
   async function send(forced){
     var text=forced||input.value.trim();if(!text||busy)return;
     if(!consent){pending=text;input.value="";consentModal.hidden=false;$("#ck18").focus();return;}
@@ -81,6 +111,7 @@
           if(ev.error)add("sys","",ev.error);
           if(ev.done&&me){if(ev.trial_denied){me.trial_denied=true;me.free_exhausted=true;}if(ev.safety)add("sys","","Votre message a bien été lu, même sans crédit. Un membre de notre équipe peut vous proposer de l'aide. En cas de danger immédiat : 15 ou 3114.");if(typeof ev.credits==="number")me.credits=ev.credits;if(!ev.free){me.free_exhausted=true;}me.paywalled=me.free_exhausted&&me.credits<=0;showQuota();if(me.free_exhausted&&me.credits===0&&!me.auto_recharge)add("sys","","C'était votre dernier crédit. Vous pourrez en racheter au prochain message.");}
           if(ev.risk==="rouge")crisis();
+          if(ev.done&&ev.review&&!log.querySelector(".crisis"))setTimeout(askReview,1200);
         }
       }
       if(!full)el.remove();else if(CRISIS.test(full))crisis();
