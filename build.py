@@ -177,6 +177,18 @@ def layout(title, description, body, path, extra_head="", nav_on="", toc=None, o
 </html>
 """
 
+_ASSET_V = {}
+def versioned(content):
+    """Ajoute ?v=<empreinte> aux fichiers de /static/ cités dans une page : après un déploiement, un navigateur qui a gardé
+    l'ancien CSS ou les anciennes images en cache (cache HTTP, Cloudflare, service worker) va chercher les nouveaux."""
+    def sub(m):
+        p = m.group(1)
+        if p not in _ASSET_V:
+            f = os.path.join(DIST, p.lstrip("/"))
+            _ASSET_V[p] = hashlib.sha256(open(f, "rb").read()).hexdigest()[:8] if os.path.isfile(f) else ""
+        return f"{p}?v={_ASSET_V[p]}" if _ASSET_V[p] else p
+    return re.sub(r'(/static/[\w./-]+?\.(?:css|js|svg|jpg|png|webp))(?=["\'])', sub, content)
+
 def write(path, content, track=True):
     if track and path.endswith("/"):
         norm = content.replace(TODAY, "").replace(fr_date(TODAY), "")
@@ -184,6 +196,7 @@ def write(path, content, track=True):
     full = os.path.join(DIST, path.lstrip("/"))
     if path.endswith("/"):
         full = os.path.join(full, "index.html")
+        content = versioned(content)
     os.makedirs(os.path.dirname(full), exist_ok=True)
     with open(full, "w", encoding="utf-8") as f:
         f.write(content)
