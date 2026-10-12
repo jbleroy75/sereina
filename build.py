@@ -168,7 +168,7 @@ def layout(title, description, body, path, extra_head="", nav_on="", toc=None, o
 {body}
 <footer>
   <span>Sereina, {TODAY[:4]}. Un espace d'écoute, pas un service médical.</span>
-  <span><a href="/a-propos/">À propos</a> · <a href="/guides/">Guides gratuits</a> · <a href="/application/">Application</a> · <a href="/offrir/">Offrir à un proche</a> · <a href="/guides-achat/">Guides d'achat</a> · <a href="/credits/">Tarifs</a> · <a href="/contact/">Contact</a> · <a href="/confidentialite/">Confidentialité</a> · <a href="/cgv/">Conditions</a> · <a href="/mentions-legales/">Mentions légales</a></span>
+  <span><a href="/a-propos/">À propos</a> · <a href="/guides/">Guides gratuits</a> · <a href="/application/">Application</a> · <a href="/offrir/">Offrir à un proche</a> · <a href="/guides-achat/">Guides d'achat</a> · <a href="/associations/">Associations</a> · <a href="/credits/">Tarifs</a> · <a href="/contact/">Contact</a> · <a href="/confidentialite/">Confidentialité</a> · <a href="/cgv/">Conditions</a> · <a href="/mentions-legales/">Mentions légales</a></span>
 </footer>
 </main>
 </div>
@@ -842,10 +842,42 @@ def render_landing_pages():
         "Compagnon virtuel pour personne âgée : à quoi ça sert, ce que ça ne remplace pas, quoi vérifier avant de choisir, et comment essayer gratuitement.",
         body, "/compagnon-virtuel-personne-agee/", faq_ld(faq), "conseils", None, True))
 
-ACHATS_DIR = os.path.join(ROOT, "content", "achats")
+ASSOC_NOTE = ("<aside class=\"disclosure\"><b>Indépendance.</b> Cette liste n'est pas exhaustive et nous n'avons aucun lien commercial avec les associations citées : nous ne touchons rien pour les mentionner. "
+              "Les coordonnées et les horaires changent : vérifiez-les toujours sur le site de l'association avant d'appeler. Ces pages informent et ne remplacent pas l'avis d'un professionnel. Sereina, éditeur de ce site, propose aussi un service payant d'écoute en ligne : nous le mentionnons quand c'est pertinent.</aside>")
 ACHAT_NOTE = ("<aside class=\"disclosure\"><b>Transparence.</b> Ce guide vous aide à choisir : il ne classe pas de produits et nous n'avons pas testé les appareils cités. "
               "Cette page ne contient <b>aucun lien commercial</b> pour le moment. Si des liens affiliés y sont un jour ajoutés (nous toucherions alors une commission, sans coût pour vous), "
               "nous l'indiquerons ici, en haut de la page, et cela ne changera pas nos conseils. Sereina, éditeur de ce site, propose aussi un service payant d'écoute en ligne : nous le mentionnons quand c'est pertinent.</aside>")
+
+COLLECTIONS = {
+    "achats": dict(dir="achats", base="/guides-achat/", label="Guides d'achat", note=ACHAT_NOTE, tag="Sans lien commercial", img="achat",
+        h1="Guides d'achat pour les seniors et leurs proches",
+        lede="Choisir un téléphone, un cadre photo ou un cadeau pour un parent ou un grand-parent n'est pas simple. Ces guides vous aident à poser les bonnes questions avant d'acheter.",
+        meta_title="Guides d'achat pour seniors et leurs proches | Sereina",
+        meta_desc="Téléphone simple, cadre photo connecté, idées de cadeaux : des guides clairs pour bien choisir pour un parent ou un grand-parent, sans faux classements.",
+        related="Autres guides d'achat",
+        disclaimer="Les caractéristiques, les prix et les disponibilités changent : vérifiez-les sur la fiche du vendeur avant d'acheter. Pour le matériel de santé ou de sécurité, demandez conseil à un professionnel. En danger, appelez le 15 ou le 3114.",
+        method_title="Comment nous écrivons ces guides",
+        method="""<li><b>Des critères, pas de faux classements.</b> Nous n'inventons ni notes, ni tests, ni avis. Nous n'avons pas testé les produits cités et nous le disons.</li>
+<li><b>Le point de vue de la personne qui s'en servira.</b> Un produit n'est bon que s'il est utilisé, pas seulement s'il est bien noté.</li>
+<li><b>Une date sur chaque page.</b> Les produits et les prix changent vite : vérifiez toujours la fiche du vendeur.</li>
+<li><b>Transparence commerciale.</b> Aucun lien commercial pour le moment. S'il y en a un jour, ce sera indiqué en haut de chaque page concernée.</li>""",
+        outro="""Vous cherchez plutôt des conseils pour le moral ? Voir <a href="/conseils/solitude-retraite/">solitude, retraite et âge</a> ou <a href="/aider-parent-qui-se-sent-seul/">comment aider un parent qui se sent seul</a>.""",
+        talk=("jeanne", "Besoin d'en parler, ou d'offrir une présence ?", "Jeanne est l'accompagnant d'écoute Sereina pour la solitude et les changements de vie. Un programme d'intelligence artificielle, disponible jour et nuit, gratuit pour commencer.")),
+    "associations": dict(dir="associations", base="/associations/", label="Associations et soutien", note=ASSOC_NOTE, tag="Indépendant des associations citées", img="asso",
+        h1="Associations et soutien pour les personnes âgées et leurs proches",
+        lede="Solitude, aide aux aidants, deuil, envie de s'engager : des associations existent, souvent gratuites. Ces pages vous aident à trouver la bonne et à la contacter.",
+        meta_title="Associations contre l'isolement, pour les aidants et le deuil | Sereina",
+        meta_desc="Quelles associations contacter en France contre la solitude des personnes âgées, pour soutenir les aidants, traverser un deuil ou devenir bénévole ? Lignes d'écoute, équipes locales, démarches.",
+        related="Autres pages sur les associations",
+        disclaimer="Les coordonnées, les horaires et les services changent : vérifiez-les sur le site de l'association. Ces pages informent et ne remplacent pas l'avis d'un professionnel de santé. En danger immédiat, appelez le 15 ou le 3114.",
+        method_title="Comment nous choisissons les associations",
+        method="""<li><b>Des organisations reconnues et actives,</b> avec un site, des coordonnées et, quand c'est le cas, des bénévoles formés.</li>
+<li><b>Aucun lien commercial.</b> Nous ne sommes payés par aucune des associations citées, et nous ne touchons rien pour les mentionner.</li>
+<li><b>Des informations à vérifier.</b> Nous indiquons ce que disent leurs sites et des sources publiques ; les horaires peuvent changer, vérifiez-les avant d'appeler.</li>
+<li><b>Une liste ouverte.</b> Si votre association manque ou si une information est inexacte, <a href="/contact/">écrivez-nous</a>.</li>""",
+        outro="""Pour un coup de pouce avant de contacter une association : <a href="/aider-parent-qui-se-sent-seul/">comment aider un parent qui se sent seul</a> ou <a href="/urgence/">les numéros d'urgence</a>.""",
+        talk=("jeanne", "Besoin d'en parler maintenant ?", "Jeanne est l'accompagnant d'écoute Sereina pour la solitude et les changements de vie. Un programme d'intelligence artificielle, disponible jour et nuit, gratuit pour commencer. Il ne remplace ni un humain ni les associations citées.")),
+}
 
 def label_tables(h):
     """Ajoute à chaque cellule l'intitulé de sa colonne : sur téléphone, le tableau devient une suite de fiches lisibles (pas de défilement latéral)."""
@@ -862,26 +894,29 @@ def label_tables(h):
         return re.sub(r"<tr>.*?</tr>", row, t, flags=re.S)
     return re.sub(r"<table>.*?</table>", one, h, flags=re.S)
 
-def load_achats():
+def load_collection(cfg):
+    d = os.path.join(ROOT, "content", cfg["dir"])
     out = []
-    for fn in sorted(os.listdir(ACHATS_DIR)):
+    for fn in sorted(os.listdir(d)):
         if not fn.endswith(".md"):
             continue
-        s = open(os.path.join(ACHATS_DIR, fn), encoding="utf-8").read()
+        s = open(os.path.join(d, fn), encoding="utf-8").read()
         m = re.match(r"^---\n(.*?)\n---\n", s, re.S)
         fm = yaml.safe_load(m.group(1))
         fm["slug"] = fn[:-3]
-        fm["path"] = f"/guides-achat/{fm['slug']}/"
+        fm["path"] = f"{cfg['base']}{fm['slug']}/"
         fm["body"] = s[m.end():].strip()
         out.append(fm)
     return out
 
-def achat_card(a):
-    return (f'<li><a href="{a["path"]}"><img src="/static/img/scenes/achat-{a["image"]}.svg" alt="" width="800" height="320" loading="lazy">'
-            f'<span class="ac-body"><em>{esc(a["kicker"])}</em><b>{esc(a["title"])}</b><span>{esc(a["description"])}</span></span></a></li>')
+def load_achats():
+    return load_collection(COLLECTIONS["achats"]) + load_collection(COLLECTIONS["associations"])
 
-def render_achats():
-    items = load_achats()
+def render_collection(cfg):
+    items = load_collection(cfg)
+    def card(a):
+        return (f'<li><a href="{a["path"]}"><img src="/static/img/scenes/{cfg["img"]}-{a["image"]}.svg" alt="" width="800" height="320" loading="lazy">'
+                f'<span class="ac-body"><em>{esc(a["kicker"])}</em><b>{esc(a["title"]).replace(" :", "&nbsp;:")}</b><span>{esc(a["description"])}</span></span></a></li>')
     for a in items:
         md = markdown.Markdown(extensions=["toc", "tables"], extension_configs={"toc": {"toc_depth": "2"}})
         content_html = label_tables(md.convert(a["body"]))
@@ -896,44 +931,44 @@ def render_achats():
                "mainEntityOfPage": url(a["path"]), "wordCount": words},
               {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
                   {"@type": "ListItem", "position": 1, "name": "Accueil", "item": url("/")},
-                  {"@type": "ListItem", "position": 2, "name": "Guides d'achat", "item": url("/guides-achat/")},
+                  {"@type": "ListItem", "position": 2, "name": cfg["label"], "item": url(cfg["base"])},
                   {"@type": "ListItem", "position": 3, "name": a["title"], "item": url(a["path"])}]}]
         if faqs:
             ld.append({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": ans}} for q, ans in faqs]})
         extra = "".join(f'<script type="application/ld+json">{json.dumps(x, ensure_ascii=False)}</script>' for x in ld)
+        tk, tt, tx = cfg["talk"]
         body_html = f"""
-<nav class="crumbs" aria-label="Fil d'Ariane"><a href="/">Accueil</a><span>›</span><a href="/guides-achat/">Guides d'achat</a></nav>
+<nav class="crumbs" aria-label="Fil d'Ariane"><a href="/">Accueil</a><span>›</span><a href="{cfg["base"]}">{esc(cfg["label"])}</a></nav>
 <div class="article-head">
   <h1>{esc(a["title"]).replace(" :", "&nbsp;:")}</h1>
-  <div class="meta"><span>Lecture : {reading} min</span><span>Mis à jour le {fr_date(str(a["updated"]))}</span><span>Sans lien commercial</span></div>
+  <div class="meta"><span>Lecture : {reading} min</span><span>Mis à jour le {fr_date(str(a["updated"]))}</span><span>{esc(cfg["tag"])}</span></div>
 </div>
-<img class="scene achat-img" src="/static/img/scenes/achat-{a["image"]}.svg" alt="" width="800" height="320" fetchpriority="high">
-{ACHAT_NOTE}
+<img class="scene achat-img" src="/static/img/scenes/{cfg["img"]}-{a["image"]}.svg" alt="" width="800" height="320" fetchpriority="high">
+{cfg["note"]}
 <article class="article">
 {content_html}
-{talk_box("jeanne", "Besoin d'en parler, ou d'offrir une présence ?", "Jeanne est l'accompagnant d'écoute Sereina pour la solitude et les changements de vie. Un programme d'intelligence artificielle, disponible jour et nuit, gratuit pour commencer.", "Parler avec Jeanne")}
-<div class="related"><h3>Autres guides d'achat</h3><ul>{rel}</ul></div>
-<p class="disclaimer">Les caractéristiques, les prix et les disponibilités changent : vérifiez-les sur la fiche du vendeur avant d'acheter. Pour le matériel de santé ou de sécurité, demandez conseil à un professionnel. En danger, appelez le 15 ou le 3114.</p>
+{talk_box(tk, tt, tx, "Parler avec " + PROFILES[tk]["name"])}
+<div class="related"><h3>{esc(cfg["related"])}</h3><ul>{rel}</ul></div>
+<p class="disclaimer">{cfg["disclaimer"]}</p>
 </article>"""
         write(a["path"], layout(a["title"], a["description"], body_html, a["path"], extra, "conseils", toc))
-    cards = "".join(achat_card(a) for a in items)
+    cards = "".join(card(a) for a in items)
     body = f"""
 <section>
-<h1>Guides d'achat pour les seniors et leurs proches</h1>
-<p class="lede">Choisir un téléphone, un cadre photo ou un cadeau pour un parent ou un grand-parent n'est pas simple. Ces guides vous aident à poser les bonnes questions avant d'acheter.</p>
+<h1>{esc(cfg["h1"])}</h1>
+<p class="lede">{esc(cfg["lede"])}</p>
 <ul class="achat-cards">{cards}</ul>
-<h2>Comment nous écrivons ces guides</h2>
+<h2>{esc(cfg["method_title"])}</h2>
 <ul>
-<li><b>Des critères, pas de faux classements.</b> Nous n'inventons ni notes, ni tests, ni avis. Nous n'avons pas testé les produits cités et nous le disons.</li>
-<li><b>Le point de vue de la personne qui s'en servira.</b> Un produit n'est bon que s'il est utilisé, pas seulement s'il est bien noté.</li>
-<li><b>Une date sur chaque page.</b> Les produits et les prix changent vite : vérifiez toujours la fiche du vendeur.</li>
-<li><b>Transparence commerciale.</b> Aucun lien commercial pour le moment. S'il y en a un jour, ce sera indiqué en haut de chaque page concernée.</li>
+{cfg["method"]}
 </ul>
-<p>Vous cherchez plutôt des conseils pour le moral ? Voir <a href="/conseils/solitude-retraite/">solitude, retraite et âge</a> ou <a href="/aider-parent-qui-se-sent-seul/">comment aider un parent qui se sent seul</a>.</p>
+<p>{cfg["outro"]}</p>
 </section>"""
-    write("/guides-achat/", layout("Guides d'achat pour seniors et leurs proches | Sereina",
-        "Téléphone simple, cadre photo connecté, idées de cadeaux : des guides clairs pour bien choisir pour un parent ou un grand-parent, sans faux classements.",
-        body, "/guides-achat/", "", "conseils", None, True))
+    write(cfg["base"], layout(cfg["meta_title"], cfg["meta_desc"], body, cfg["base"], "", "conseils", None, True))
+
+def render_achats():
+    render_collection(COLLECTIONS["achats"])
+    render_collection(COLLECTIONS["associations"])
 
 def render_urgence():
     body = """
@@ -1243,7 +1278,7 @@ def main():
     render_accompagnants(infos)
     render_guides()
     render_pwa()
-    paths = ["/", "/conseils/", "/parler/", "/urgence/", "/offrir/", "/aider-parent-qui-se-sent-seul/", "/compagnon-virtuel-personne-agee/", "/guides-achat/", "/credits/", "/guides/", "/application/", "/accompagnants/"] + [f"/accompagnants/{k}/" for k in PROFILES] + ["/a-propos/", "/contact/", "/confidentialite/", "/cgv/", "/mentions-legales/"] + [f"/conseils/{THEMES[t]['slug']}/" for t in THEMES] + [a["path"] for a in load_achats()] + [i["path"] for i in infos]
+    paths = ["/", "/conseils/", "/parler/", "/urgence/", "/offrir/", "/aider-parent-qui-se-sent-seul/", "/compagnon-virtuel-personne-agee/", "/guides-achat/", "/associations/", "/credits/", "/guides/", "/application/", "/accompagnants/"] + [f"/accompagnants/{k}/" for k in PROFILES] + ["/a-propos/", "/contact/", "/confidentialite/", "/cgv/", "/mentions-legales/"] + [f"/conseils/{THEMES[t]['slug']}/" for t in THEMES] + [a["path"] for a in load_achats()] + [i["path"] for i in infos]
     render_sitemap(paths)
     json.dump(infos, open(os.path.join(DIST, "articles.json"), "w"), ensure_ascii=False, indent=1)
     SEO_STATE["_sitemap"] = paths
