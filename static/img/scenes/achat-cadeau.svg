@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 320" role="img" aria-label="Un cadeau enveloppé avec un ruban et une carte"><rect width="800" height="320" rx="28" fill="#fdecc8"/>
+<rect y="262" width="800" height="58" fill="#dcb98f"/>
+<rect x="300" y="120" width="200" height="142" rx="10" fill="#d9825b"/><rect x="288" y="96" width="224" height="40" rx="10" fill="#c76f4c"/>
+<rect x="385" y="96" width="30" height="166" fill="#fffaf2"/>
+<path d="M400 96c-40-50-90-30-70 0 14 18 56 10 70 0zM400 96c40-50 90-30 70 0-14 18-56 10-70 0z" fill="#fffaf2"/>
+<rect x="540" y="160" width="130" height="102" rx="8" fill="#fffaf2" transform="rotate(6 605 211)"/><path d="M580 200c-20-17 4-34 14-17 11-17 34 0 14 17l-14 13z" fill="#e8908a" transform="rotate(6 605 211)"/>
+<rect x="560" y="236" width="80" height="6" rx="3" fill="#cfc2ac" transform="rotate(6 605 211)"/>
+<g fill="#1d5a55"><circle cx="150" cy="100" r="9"/><circle cx="210" cy="60" r="7" fill="#e0a52b"/><circle cx="690" cy="80" r="9" fill="#e0a52b"/><circle cx="110" cy="190" r="7" fill="#d9825b"/></g>
+<g fill="#2f7a70"><ellipse cx="170" cy="240" rx="16" ry="44" transform="rotate(-24 170 240)"/><ellipse cx="192" cy="232" rx="16" ry="48"/></g></svg>

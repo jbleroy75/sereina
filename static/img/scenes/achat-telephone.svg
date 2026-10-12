@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 320" role="img" aria-label="Un téléphone à grosses touches posé sur une table, avec un cœur"><rect width="800" height="320" rx="28" fill="#fbeedc"/>
+<rect y="250" width="800" height="70" fill="#dcb98f"/><circle cx="640" cy="90" r="48" fill="#ffe3a0"/>
+<rect x="320" y="30" width="160" height="240" rx="26" fill="#1d5a55"/><rect x="372" y="36" width="56" height="5" rx="2.5" fill="#0f3d39"/><rect x="336" y="46" width="128" height="66" rx="10" fill="#e8f1ed"/><circle cx="352" cy="124" r="9" fill="#5fae6e"/><circle cx="448" cy="124" r="9" fill="#d9625b"/>
+<rect x="348" y="62" width="70" height="8" rx="4" fill="#1d5a55"/><rect x="348" y="80" width="100" height="8" rx="4" fill="#1d5a55" opacity=".6"/><rect x="348" y="94" width="52" height="8" rx="4" fill="#1d5a55" opacity=".6"/>
+<g fill="#fffaf2"><rect x="336" y="142" width="38" height="30" rx="9"/><rect x="381" y="142" width="38" height="30" rx="9"/><rect x="426" y="142" width="38" height="30" rx="9"/><rect x="336" y="178" width="38" height="30" rx="9"/><rect x="381" y="178" width="38" height="30" rx="9"/><rect x="426" y="178" width="38" height="30" rx="9"/><rect x="336" y="214" width="38" height="30" rx="9"/><rect x="381" y="214" width="38" height="30" rx="9"/></g>
+<rect x="426" y="214" width="38" height="30" rx="9" fill="#d9825b"/>
+<path d="M560 150c-30-26 6-52 24-26 18-26 54 0 24 26l-24 22z" fill="#e8908a"/>
+<rect x="150" y="230" width="90" height="60" rx="10" fill="#c76f4c"/><g fill="#2f7a70"><ellipse cx="170" cy="190" rx="14" ry="42" transform="rotate(-24 170 190)"/><ellipse cx="195" cy="180" rx="14" ry="46"/><ellipse cx="220" cy="192" rx="14" ry="40" transform="rotate(24 220 192)"/></g></svg>

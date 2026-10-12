@@ -638,3 +638,26 @@ a,button,.btn,.ghost{transition:color .2s,background-color .2s,border-color .2s,
 .talk-head .tools select{min-width:0;width:100%;max-width:100%;text-overflow:ellipsis}
 .nlcover span,.nlcover b{font-size:1rem}
 @media (min-width:701px) and (max-width:1000px){.hero-visual{max-width:600px;margin-inline:auto;width:100%}}
+/* Guides d'achat */
+.achat-img{margin:0 0 24px;border-radius:24px}
+.disclosure{margin:0 0 28px;padding:16px 20px;background:var(--mist);border:1px solid var(--line);border-left:6px solid var(--steel);border-radius:14px;font-size:.92em;line-height:1.6;color:var(--muted);max-width:44em}
+.disclosure b{color:var(--fg)}
+.article table{width:100%;border-collapse:collapse;margin:0 0 24px;font-size:.92em}
+.article th,.article td{padding:12px 14px;border:1px solid var(--line);text-align:left;vertical-align:top}
+.article th{background:var(--mist);font-family:var(--display)}
+.achat-cards{list-style:none;margin:32px 0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
+.achat-cards a{display:flex;flex-direction:column;height:100%;background:var(--paper);border:1px solid var(--line);border-radius:20px;overflow:hidden;text-decoration:none;color:var(--fg);box-shadow:var(--shadow);transition:transform .25s,box-shadow .25s}
+.achat-cards a:hover{transform:translateY(-4px);box-shadow:0 14px 34px rgba(60,40,20,.14)}
+.achat-cards img{display:block;width:100%;height:auto}
+.ac-body{display:flex;flex-direction:column;gap:8px;padding:20px}
+.ac-body em{font-style:normal;font-weight:700;font-size:.85em;color:var(--steel);font-family:var(--display)}
+.ac-body b{font-family:var(--display);font-size:1.15em;line-height:1.3}
+.ac-body span{color:var(--muted);font-size:.95em}
+@media (max-width:700px){
+  .article table,.article tbody,.article tr,.article td{display:block;width:100%}
+  .article thead{position:absolute;left:-9999px}
+  .article tr{margin:0 0 14px;background:var(--paper);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .article td{border:0;border-bottom:1px solid var(--line);padding:10px 14px}
+  .article td:last-child{border-bottom:0}
+  .article td::before{content:attr(data-label);display:block;font-family:var(--display);font-weight:700;font-size:.85em;color:var(--steel);margin-bottom:2px}
+}
