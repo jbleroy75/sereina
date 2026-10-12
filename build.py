@@ -38,6 +38,11 @@ def stamp(path, source):
         SEO_STATE[path] = st
     return st["lastmod"]
 
+MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"]
+def fr_month(iso):
+    y, m = str(iso).split("-")[:2]
+    return f"{MOIS[int(m) - 1]} {y}"
+
 def fr_date(iso):
     y, m, d = iso.split("-")
     return f"{d}/{m}/{y}"
@@ -270,6 +275,32 @@ def autolink(html_text, self_url):
     head = re.sub(r"<p>(?:(?!</p>).)*</p>", para, head, flags=re.S)
     return head + tail, count
 
+
+CALLOUTS = [("À essayer", "try"), ("Ce qu'on peut dire", "say"), ("Bon à savoir", "know"), ("Attention", "warn"), ("Exemple", "ex")]
+def callouts(h):
+    """Une citation Markdown dont le premier mot en gras est « À essayer », « Ce qu'on peut dire », « Bon à savoir », « Attention » ou « Exemple »
+    devient un encadré à icône : outils concrets que le lecteur peut emporter."""
+    def sub(m):
+        lab = m.group(1)
+        for k, c in CALLOUTS:
+            if lab.startswith(k):
+                return f'<blockquote class="callout {c}"><p><strong>{lab}</strong>'
+        return m.group(0)
+    return re.sub(r"<blockquote>\s*<p><strong>([^<]+)</strong>", sub, h)
+
+def keypoints_html(items):
+    if not items:
+        return ""
+    lis = "".join(f"<li>{html.escape(str(x))}</li>" for x in items)
+    return f'<aside class="keypoints" aria-label="L\'essentiel"><h2>L\'essentiel</h2><ul>{lis}</ul></aside>'
+
+def sources_html(srcs, updated=""):
+    if not srcs:
+        return ""
+    lis = "".join(f'<li><a href="{html.escape(s["u"])}" rel="noopener" target="_blank">{html.escape(s["t"])}</a>' + (f' <span>{html.escape(s["o"])}</span>' if s.get("o") else "") + "</li>" for s in srcs)
+    d = f" Pages consultées en {fr_month(updated)}." if updated else ""
+    return f'<section class="sources" aria-labelledby="src"><h2 id="src">Sources et pour aller plus loin</h2><ul>{lis}</ul><p class="sub">Ces références sont des organismes publics ou des associations reconnues. Elles complètent cette page et ne la remplacent pas.{d}</p></section>'
+
 def render_article(a):
     theme = THEMES[a["theme"]]
     fm, body = parse_article(a["theme"], a["slug"])
@@ -280,6 +311,8 @@ def render_article(a):
     md.reset()
     content_html = md.convert(body)
     content_html, nb_auto = autolink(content_html, f"/conseils/{theme['slug']}/{a['slug']}/")
+    content_html = callouts(content_html)
+    srcs = fm.get("sources") or []
     toc = [(t["id"], html.unescape(t["name"])) for t in md.toc_tokens]
     # Invitation à en parler après l'introduction et la première partie (avant le 2e intertitre) ; une autre en fin d'article.
     gk = GUIDE_KEY[theme["guide"]]
@@ -326,10 +359,12 @@ def render_article(a):
 <nav class="crumbs" aria-label="Fil d'Ariane"><a href="/">Accueil</a><span>›</span><a href="/conseils/">Conseils</a><span>›</span><a href="/conseils/{theme['slug']}/">{esc(theme['name'])}</a></nav>
 <div class="article-head">
   <h1>{esc(h1)}</h1>
-  <div class="meta"><span>Lecture : {reading} min</span><span>Mis à jour le {fr_date(lastmod)}</span><span>Relu par l'équipe Sereina</span></div>
+  <div class="meta"><span>Lecture : {reading} min</span><span>Mis à jour le {fr_date(lastmod)}</span>{'<span>' + str(len(srcs)) + ' sources citées</span>' if srcs else ''}</div>
 </div>
 <article class="article">
+{keypoints_html(fm.get("retenir"))}
 {content_html}
+{sources_html(srcs, fm.get("verified", ""))}
 <div class="talkbox with-portrait">
   {portrait(GUIDE_KEY[guide], "portrait small")}
   <div><h3>Besoin d'en parler maintenant ?</h3>
@@ -891,7 +926,9 @@ def label_tables(h):
                 i[0] += 1
                 return f'<td data-label="{esc(lab)}">'
             return re.sub(r"<td[^>]*>", cell, r.group(0))
-        return re.sub(r"<tr>.*?</tr>", row, t, flags=re.S)
+        t = re.sub(r"<tr>.*?</tr>", row, t, flags=re.S)
+        # tableau de 5 colonnes ou plus : toujours présenté en fiches (il ne tiendrait pas dans la colonne de lecture)
+        return t.replace("<table>", '<table class="tbl-wide">', 1) if len(heads) >= 5 else t
     return re.sub(r"<table>.*?</table>", one, h, flags=re.S)
 
 def load_collection(cfg):
@@ -919,7 +956,8 @@ def render_collection(cfg):
                 f'<span class="ac-body"><em>{esc(a["kicker"])}</em><b>{esc(a["title"]).replace(" :", "&nbsp;:")}</b><span>{esc(a["description"])}</span></span></a></li>')
     for a in items:
         md = markdown.Markdown(extensions=["toc", "tables"], extension_configs={"toc": {"toc_depth": "2"}})
-        content_html = label_tables(md.convert(a["body"]))
+        content_html = callouts(label_tables(md.convert(a["body"])))
+        srcs = a.get("sources") or []
         toc = [(t["id"], html.unescape(t["name"])) for t in md.toc_tokens]
         faqs = faq_entries(a["body"])
         words = len(re.findall(r"\w+", a["body"]))
@@ -941,12 +979,14 @@ def render_collection(cfg):
 <nav class="crumbs" aria-label="Fil d'Ariane"><a href="/">Accueil</a><span>›</span><a href="{cfg["base"]}">{esc(cfg["label"])}</a></nav>
 <div class="article-head">
   <h1>{esc(a["title"]).replace(" :", "&nbsp;:")}</h1>
-  <div class="meta"><span>Lecture : {reading} min</span><span>Mis à jour le {fr_date(str(a["updated"]))}</span><span>{esc(cfg["tag"])}</span></div>
+  <div class="meta"><span>Lecture : {reading} min</span><span>Mis à jour le {fr_date(str(a["updated"]))}</span><span>{esc(cfg["tag"])}</span>{'<span>' + str(len(srcs)) + ' sources citées</span>' if srcs else ''}</div>
 </div>
 <img class="scene achat-img" src="/static/img/scenes/{cfg["img"]}-{a["image"]}.svg" alt="" width="800" height="320" fetchpriority="high">
 {cfg["note"]}
 <article class="article">
+{keypoints_html(a.get("retenir"))}
 {content_html}
+{sources_html(srcs, a.get("verified", ""))}
 {talk_box(tk, tt, tx, "Parler avec " + PROFILES[tk]["name"])}
 <div class="related"><h3>{esc(cfg["related"])}</h3><ul>{rel}</ul></div>
 <p class="disclaimer">{cfg["disclaimer"]}</p>
