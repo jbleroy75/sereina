@@ -634,3 +634,7 @@ a,button,.btn,.ghost{transition:color .2s,background-color .2s,border-color .2s,
 .inline-cta b{display:block;font-family:var(--display);font-size:1.15em}
 .inline-cta span{display:block;color:var(--muted);font-size:.95em;margin-top:2px}
 @media (max-width:700px){.inline-cta{grid-template-columns:56px minmax(0,1fr)}.inline-cta .portrait.mini{width:56px;height:56px}.inline-cta .btn{grid-column:1/-1;text-align:center}}
+.talk-head .tools{min-width:0;max-width:100%}
+.talk-head .tools select{min-width:0;width:100%;max-width:100%;text-overflow:ellipsis}
+.nlcover span,.nlcover b{font-size:1rem}
+@media (min-width:701px) and (max-width:1000px){.hero-visual{max-width:600px;margin-inline:auto;width:100%}}
