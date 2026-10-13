@@ -65,7 +65,7 @@ by_theme = {}
 for a in ARTICLES:
     by_theme.setdefault(a["theme"], []).append(a)
 
-PORTRAIT_EXT = os.environ.get("PORTRAIT_EXT", "jpg")
+PORTRAIT_EXT = os.environ.get("PORTRAIT_EXT", "webp")
 PROFILES = {
     "clara": {"name": "Clara", "spec": "Anxiété et stress", "theme": "anxiete",
         "short": "Pour les pensées qui tournent en boucle, l'inquiétude permanente, le stress du quotidien.",
@@ -100,6 +100,22 @@ PROFILES = {
 }
 GUIDES = {p["name"]: p["spec"] for p in PROFILES.values()}
 GUIDE_KEY = {p["name"]: k for k, p in PROFILES.items()}
+
+# Illustrations : métadonnées (chemin, dimensions, texte alternatif) dans content/images.json ; une image absente est simplement omise.
+IMAGES = json.load(open(os.path.join(ROOT, "content", "images.json"), encoding="utf-8"))
+
+def pic(key, cls="scene", alt=None, eager=False):
+    m = IMAGES.get(key)
+    if not m:
+        return ""
+    a = m["alt"] if alt is None else alt
+    load = 'fetchpriority="high"' if eager else 'loading="lazy"'
+    return f'<img class="{cls}" src="{m["src"]}" alt="{esc(a)}" width="{m["w"]}" height="{m["h"]}" {load}>'
+
+def scene_src(prefix, name):
+    """Scène d'un guide d'achat ou d'une association : version peinte si elle existe, sinon l'ancienne illustration vectorielle."""
+    k = f"{prefix}-{name}"
+    return IMAGES[k]["src"] if k in IMAGES else f"/static/img/scenes/{k}.svg"
 
 def portrait(key, cls="portrait", size=""):
     src = f"/static/img/accompagnants/{key}.{PORTRAIT_EXT}"
@@ -139,7 +155,12 @@ def layout(title, description, body, path, extra_head="", nav_on="", toc=None, o
 <meta property="og:url" content="{esc(canonical)}">
 <meta property="og:site_name" content="Sereina">
 <meta property="og:locale" content="fr_FR">
-<meta name="twitter:card" content="summary">
+<meta property="og:image" content="{esc(url('/static/img/partage-social.jpg'))}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Illustration peinte d'une pièce lumineuse au lever du jour : Sereina, un espace d'écoute en ligne">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="{esc(url('/static/img/partage-social.jpg'))}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap">
@@ -408,16 +429,26 @@ def nl_form(guide, source, label="Recevoir le guide", select=False):
   <p class="nlmsg" role="status" aria-live="polite"></p>
 </form>'''
 
+GUIDE_COVER = {"anxiete": "guide-anxiete", "sommeil": "guide-sommeil", "epuisement": "guide-epuisement-travail", "deuil": "guide-deuil-solitude", "prendre-soin": "guide-prendre-soin-de-soi"}
+
+def guide_cover(k, g):
+    """Couverture d'un guide : illustration + titre en texte (l'image ne contient aucun texte)."""
+    t = esc(g["titre"].split(" :")[0])
+    m = IMAGES.get(GUIDE_COVER.get(k, ""))
+    if not m:
+        return f'<div class="nlcover" aria-hidden="true"><span>Guide gratuit</span><b>{t}</b></div>'
+    return f'<div class="nlcover has-img" aria-hidden="true"><img src="{m["src"]}" alt="" width="{m["w"]}" height="{m["h"]}" loading="lazy"><span>Guide gratuit</span><b>{t}</b></div>'
+
 def nl_box(guide, source):
     g = DL_GUIDES.get(guide)
     if not g:
         return ""
-    return f'''<aside class="nlbox"><div class="nlcover" aria-hidden="true"><span>Guide gratuit</span><b>{esc(g["titre"].split(" :")[0])}</b></div>
+    return f'''<aside class="nlbox">{guide_cover(guide, g)}
 <div><h3>Guide gratuit à télécharger</h3><p><b>{esc(g["titre"])}</b>. {esc(g["accroche"])} Un PDF à lire à votre rythme et à imprimer.</p>
 {nl_form(guide, source)}{NL_CONSENT}</div></aside>'''
 
 def render_guides():
-    items = "".join(f'''<li class="guide" id="{k}" data-guide-title="{k}" data-title="{esc(g["titre"])}"><div class="nlcover" aria-hidden="true"><span>Guide gratuit</span><b>{esc(g["titre"].split(" :")[0])}</b></div>
+    items = "".join(f'''<li class="guide" id="{k}" data-guide-title="{k}" data-title="{esc(g["titre"])}">{guide_cover(k, g)}
 <div><h2>{esc(g["titre"])}</h2><p class="sub">{esc(g["sous_titre"])}</p><p>{esc(g["accroche"])}</p>{nl_form(k, "guides", "Recevoir ce guide")}</div></li>''' for k, g in DL_GUIDES.items())
     body = f"""
 <section>
@@ -467,8 +498,10 @@ def render_pwa():
     body = """
 <section>
 <h1>Installer Sereina sur votre téléphone</h1>
+__PIC_app__
 <p class="lede">Sereina peut s'ajouter à l'écran d'accueil de votre téléphone, de votre tablette ou de votre ordinateur, comme une application. Rien à télécharger dans un magasin d'applications, rien à payer, et cela prend moins d'une minute.</p>
 <h2>Sur iPhone ou iPad</h2>
+__PIC_iphone__
 <ol class="steps">
   <li>Ouvrez <b>__HOST__</b> avec <b>Safari</b>.</li>
   <li>Touchez le bouton <b>Partager</b> en bas de l'écran (un carré avec une flèche vers le haut).</li>
@@ -476,6 +509,7 @@ def render_pwa():
   <li>Touchez <b>Ajouter</b>, en haut à droite. L'icône Sereina apparaît avec vos autres applications.</li>
 </ol>
 <h2>Sur Android</h2>
+__PIC_android__
 <ol class="steps">
   <li>Ouvrez <b>__HOST__</b> avec <b>Chrome</b>.</li>
   <li>Touchez les <b>trois points</b> en haut à droite.</li>
@@ -483,11 +517,12 @@ def render_pwa():
   <li>Confirmez. L'icône Sereina apparaît sur votre écran d'accueil.</li>
 </ol>
 <h2>Sur ordinateur</h2>
+__PIC_ordinateur__
 <p class="sub">Avec Chrome ou Edge, cliquez sur la petite icône d'installation à droite de la barre d'adresse, puis sur <b>Installer</b>.</p>
 <h2>Bon à savoir</h2>
 <div class="run"><p>L'application ouvre le même Sereina que le site : vos crédits et vos conversations sont les mêmes. Pour les retrouver sur plusieurs appareils, ajoutez votre adresse e-mail dans <a href="/mon-compte/">Mon compte</a>. Sans connexion internet, l'application affiche les numéros d'urgence ; les conversations, elles, demandent une connexion.</p></div>
 <div class="cta"><a class="btn" href="/parler/">Commencer à parler</a></div>
-</section>""".replace("__HOST__", HOST)
+</section>""".replace("__HOST__", HOST).replace("__PIC_app__", pic("application-accueil", "scene banner", eager=True)).replace("__PIC_iphone__", pic("installation-iphone", "scene illu")).replace("__PIC_android__", pic("installation-android", "scene illu")).replace("__PIC_ordinateur__", pic("installation-ordinateur", "scene illu"))
     write("/application/", layout("Installer l'application Sereina sur iPhone, Android ou ordinateur", "Ajoutez Sereina à l'écran d'accueil de votre téléphone en moins d'une minute, sans magasin d'applications : la marche à suivre pour iPhone, Android et ordinateur.", body, "/application/", one_col=True))
     body = """
 <section>
@@ -547,6 +582,9 @@ def make_icons():
     draw(64, 0.04).save(os.path.join(d, "favicon.ico"), sizes=[(16, 16), (32, 32), (48, 48)])
 
 # ---------- Pages d'index ----------
+THEME_IMG = {"anxiete": "rubrique-anxiete-stress", "sommeil": "rubrique-sommeil", "travail": "rubrique-travail-burn-out", "couple": "rubrique-couple",
+             "famille": "rubrique-famille", "deuil": "rubrique-deuil", "solitude": "rubrique-solitude-retraite", "aide": "rubrique-se-faire-aider"}
+
 def render_theme(tkey, infos):
     theme = THEMES[tkey]
     path = f"/conseils/{theme['slug']}/"
@@ -558,6 +596,7 @@ def render_theme(tkey, infos):
 <section>
 <h1>{esc(theme['name'])}</h1>
 <p class="lede">{esc(theme['intro'])}</p>
+{pic(THEME_IMG.get(tkey, ""), "scene banner", eager=True)}
 <p class="sub">{len(infos)} articles. Chaque page informe, donne des gestes concrets et dit quand demander de l'aide.</p>
 <ul class="list">{items}</ul>
 <div class="talkbox with-portrait">{portrait(GUIDE_KEY[theme['guide']], "portrait small")}<div><h3>En parler avec {esc(theme['guide'])}</h3><p>L'accompagnant Sereina préparé pour ce thème vous écoute, jour et nuit. Gratuit pour commencer.</p><a class="btn" href="/parler/?avec={GUIDE_KEY[theme['guide']]}">Parler avec {esc(theme['guide'])}</a></div></div>
@@ -570,12 +609,13 @@ def render_conseils_index(all_infos):
     items = ""
     for tkey, theme in THEMES.items():
         n = len([i for i in all_infos if i["theme"] == tkey])
-        items += f'<li><a class="t" href="/conseils/{theme["slug"]}/">{esc(theme["name"])}</a><p>{esc(theme["intro"])}</p><div class="n">{n} articles</div></li>'
+        ph = pic(THEME_IMG.get(tkey, ""), "rub", alt="")
+        items += f'<li>{f'<a class="ph" href="/conseils/{theme["slug"]}/" tabindex="-1" aria-hidden="true">{ph}</a>' if ph else ""}<a class="t" href="/conseils/{theme["slug"]}/">{esc(theme["name"])}</a><p>{esc(theme["intro"])}</p><div class="n">{n} articles</div></li>'
     body = f"""
 <section>
 <h1>Conseils gratuits pour aller mieux</h1>
 <p class="lede">Cent pages écrites simplement, pour comprendre ce que vous vivez et savoir quoi faire. Sans jargon, sans promesse de guérison, avec à chaque fois le moment où il faut demander de l'aide à un professionnel.</p>
-<ul class="themes">{items}</ul>
+<ul class="themes with-img">{items}</ul>
 </section>"""
     write(path, layout("Conseils gratuits : anxiété, sommeil, travail, couple, deuil | Sereina",
                        "Des conseils gratuits et concrets pour l'anxiété, le sommeil, le burn-out, le couple, la famille, le deuil et la solitude. Écrits simplement, pour les adultes de 30 à 70 ans et plus.",
@@ -608,7 +648,7 @@ def render_home(all_infos):
       <p class="mini">Les accompagnants sont des programmes d'intelligence artificielle, pas des psychologues ni des médecins. En danger : appelez le <b>15</b> ou le <b>3114</b>.</p>
     </div>
     <div class="hero-visual">
-    <img class="scene hero-scene" src="/static/img/scenes/accueil.svg" alt="Illustration : une personne installée sur son canapé avec une tasse chaude, face à la fenêtre où le jour se lève" width="800" height="640" fetchpriority="high">
+    <img class="scene hero-scene" src="/static/img/scenes/accueil.webp" alt="Illustration : une personne installée sur son canapé avec une tasse chaude, face à la fenêtre où le jour se lève" width="800" height="640" fetchpriority="high">
     <figure class="preview" aria-label="Exemple d'échange">
       <figcaption class="pv-head">{portrait("samuel", "portrait mini")}<span><b>Samuel</b> · Sommeil et fatigue<small>Exemple d'échange</small></span></figcaption>
       <div class="pv-body">
@@ -632,9 +672,9 @@ def render_home(all_infos):
   <h2>Comment ça marche</h2>
   <p class="sub">Trois étapes. Rien à installer.</p>
   <ol class="how">
-    <li><img class="spot" src="/static/img/scenes/etape1.svg" alt="" width="400" height="220" loading="lazy"><div><h3>Choisissez ce qui vous correspond</h3><p>Chaque accompagnant est préparé pour un type de difficulté. Vous pourrez en changer quand vous voulez.</p></div></li>
-    <li><img class="spot" src="/static/img/scenes/etape2.svg" alt="" width="400" height="220" loading="lazy"><div><h3>Écrivez ce qui se passe</h3><p>Comme vous le diriez à une personne de confiance. Quelques phrases suffisent ; l'accompagnant vous posera des questions pour bien comprendre.</p></div></li>
-    <li><img class="spot" src="/static/img/scenes/etape3.svg" alt="" width="400" height="220" loading="lazy"><div><h3>Avancez à votre rythme</h3><p>Vous êtes écouté, vous mettez de l'ordre dans ce que vous vivez, vous repartez avec des pistes concrètes. Si votre situation demande un professionnel, on vous dit lequel.</p></div></li>
+    <li><img class="spot" src="/static/img/scenes/etape1.webp" alt="" width="400" height="220" loading="lazy"><div><h3>Choisissez ce qui vous correspond</h3><p>Chaque accompagnant est préparé pour un type de difficulté. Vous pourrez en changer quand vous voulez.</p></div></li>
+    <li><img class="spot" src="/static/img/scenes/etape2.webp" alt="" width="400" height="220" loading="lazy"><div><h3>Écrivez ce qui se passe</h3><p>Comme vous le diriez à une personne de confiance. Quelques phrases suffisent ; l'accompagnant vous posera des questions pour bien comprendre.</p></div></li>
+    <li><img class="spot" src="/static/img/scenes/etape3.webp" alt="" width="400" height="220" loading="lazy"><div><h3>Avancez à votre rythme</h3><p>Vous êtes écouté, vous mettez de l'ordre dans ce que vous vivez, vous repartez avec des pistes concrètes. Si votre situation demande un professionnel, on vous dit lequel.</p></div></li>
   </ol>
   </div>
 </section>
@@ -642,7 +682,7 @@ def render_home(all_infos):
 <section id="confiance">
   <div class="wrap">
   <div class="trust-top"><div><h2>Ce que Sereina est, et ce qu'elle n'est pas</h2><p class="sub">Une écoute attentive, comme celle d'un ami qui prend le temps. Mais avec des limites que nous voulons vous dire clairement.</p></div>
-  <img class="scene" src="/static/img/scenes/ensemble.svg" alt="Illustration : deux personnes assises sur un banc, en train de discuter calmement" width="800" height="460" loading="lazy"></div>
+  <img class="scene" src="/static/img/scenes/ensemble.webp" alt="Illustration : deux personnes assises sur un banc, en train de discuter calmement" width="800" height="460" loading="lazy"></div>
   <div class="isnot">
     <div class="is"><h3>Sereina, c'est</h3><ul><li>Une écoute attentive, sans jugement, à toute heure</li><li>Des pistes simples et concrètes pour y voir plus clair</li><li>Des échanges qui ne sont jamais vendus ni partagés</li><li>Un texte qui s'agrandit d'un clic, pour lire confortablement</li></ul></div>
     <div class="isnt"><h3>Sereina, ce n'est pas</h3><ul><li>Un psychologue ou un médecin : aucun diagnostic, aucun traitement</li><li>Un service d'urgence : en danger, appelez le 15 ou le 3114</li><li>Une personne réelle : les accompagnants sont des programmes d'intelligence artificielle</li></ul></div>
@@ -660,6 +700,7 @@ def render_home(all_infos):
   <div class="wrap">
   <h2>Guides gratuits à télécharger</h2>
   <p class="sub">Cinq guides pratiques en PDF, à lire à votre rythme et à imprimer. <a href="/guides/">Voir tous les guides</a>.</p>
+  <ul class="gcovers">{"".join(f'<li><a href="/guides/#{k}" aria-label="Guide gratuit : {esc(g["titre"])}">{guide_cover(k, g)}</a></li>' for k, g in DL_GUIDES.items())}</ul>
   <div class="nlbox wide"><div><p>Choisissez un guide et indiquez votre adresse e-mail : vous recevez un lien de confirmation, puis le guide.</p>{nl_form("anxiete", "accueil", "Recevoir le guide", select=True)}{NL_CONSENT}</div></div>
   </div>
 </section>
@@ -690,7 +731,7 @@ def render_home(all_infos):
   </div>
 </section>
 <section class="final">
-  <div class="wrap"><img class="scene fin-scene" src="/static/img/scenes/fin.svg" alt="" width="800" height="420" loading="lazy"><h2>Prêt à en parler ?</h2><p class="sub">Les premiers échanges sont gratuits, sans inscription. Prenez le temps qu'il vous faut.</p><div class="cta2"><a class="btn big" href="/parler/">Commencer à parler</a></div><p class="mini center">Pour un parent âgé ? <a href="/offrir/">Offrir Sereina à un proche</a>.</p></div>
+  <div class="wrap"><img class="scene fin-scene" src="/static/img/scenes/fin.webp" alt="" width="800" height="420" loading="lazy"><h2>Prêt à en parler ?</h2><p class="sub">Les premiers échanges sont gratuits, sans inscription. Prenez le temps qu'il vous faut.</p><div class="cta2"><a class="btn big" href="/parler/">Commencer à parler</a></div><p class="mini center">Pour un parent âgé ? <a href="/offrir/">Offrir Sereina à un proche</a>.</p></div>
 </section>"""
     extra = '<script type="application/ld+json">' + json.dumps({
         "@context": "https://schema.org", "@type": "WebSite", "name": "Sereina", "url": url("/"), "inLanguage": "fr-FR",
@@ -711,7 +752,7 @@ def render_offrir():
       <ul class="assure"><li>Aucun compte à créer</li><li>Texte agrandissable</li><li>Conversations privées</li></ul>
       <p class="mini">Sereina est un programme d'intelligence artificielle, pas une personne ni un psychologue. Cela ne remplace ni vos visites, ni vos appels, ni un professionnel de santé.</p>
     </div>
-    <div class="hero-visual"><img class="scene hero-scene" src="/static/img/scenes/ensemble.svg" alt="Illustration : deux personnes assises sur un banc, en train de discuter calmement" width="800" height="460" fetchpriority="high"></div>
+    <div class="hero-visual">{pic("offrir-accueil", "scene hero-scene", eager=True)}</div>
   </div>
 </section>
 <section class="band">
@@ -730,9 +771,9 @@ def render_offrir():
   <h2>Installation accompagnée, en cinq minutes</h2>
   <p class="sub">Vous pouvez la faire ensemble, à la maison ou au téléphone. Rien à payer pour installer.</p>
   <ol class="how">
-    <li><img class="spot" src="/static/img/scenes/etape1.svg" alt="" width="400" height="220" loading="lazy"><div><h3>Ouvrez le site ensemble</h3><p>Sur son téléphone ou sa tablette, ouvrez <b>{HOST}</b>. Touchez « Agrandir le texte » si besoin.</p></div></li>
-    <li><img class="spot" src="/static/img/scenes/etape2.svg" alt="" width="400" height="220" loading="lazy"><div><h3>Mettez-le à portée de main</h3><p>Suivez la <a href="/application/">page « Application »</a> : l'icône Sereina s'ajoute à l'écran d'accueil, comme une application, en moins d'une minute.</p></div></li>
-    <li><img class="spot" src="/static/img/scenes/etape3.svg" alt="" width="400" height="220" loading="lazy"><div><h3>Choisissez avec lui son accompagnant</h3><p>Chacun est préparé pour une difficulté : sommeil, deuil, solitude, couple… <a href="/accompagnants/jeanne/">Jeanne</a> accompagne les changements de vie et la solitude. Essayez un premier échange à deux.</p></div></li>
+    <li>{pic("offrir-etape-ouvrir", "spot", alt="")}<div><h3>Ouvrez le site ensemble</h3><p>Sur son téléphone ou sa tablette, ouvrez <b>{HOST}</b>. Touchez « Agrandir le texte » si besoin.</p></div></li>
+    <li>{pic("offrir-etape-installer", "spot", alt="")}<div><h3>Mettez-le à portée de main</h3><p>Suivez la <a href="/application/">page « Application »</a> : l'icône Sereina s'ajoute à l'écran d'accueil, comme une application, en moins d'une minute.</p></div></li>
+    <li>{pic("offrir-etape-choisir", "spot", alt="")}<div><h3>Choisissez avec lui son accompagnant</h3><p>Chacun est préparé pour une difficulté : sommeil, deuil, solitude, couple… <a href="/accompagnants/jeanne/">Jeanne</a> accompagne les changements de vie et la solitude. Essayez un premier échange à deux.</p></div></li>
   </ol>
   </div>
 </section>
@@ -776,7 +817,7 @@ def render_offrir():
   </div>
 </section>
 <section class="final">
-  <div class="wrap"><img class="scene fin-scene" src="/static/img/scenes/fin.svg" alt="" width="800" height="420" loading="lazy"><h2>Un petit geste, une présence à toute heure.</h2><p class="sub">Essayez d'abord vous-même : c'est gratuit et sans inscription.</p><div class="cta2"><a class="btn big" href="/parler/">Essayer Sereina</a><a class="btn alt" href="#cadeau">Offrir Sereina</a></div></div>
+  <div class="wrap"><img class="scene fin-scene" src="/static/img/scenes/fin.webp" alt="" width="800" height="420" loading="lazy"><h2>Un petit geste, une présence à toute heure.</h2><p class="sub">Essayez d'abord vous-même : c'est gratuit et sans inscription.</p><div class="cta2"><a class="btn big" href="/parler/">Essayer Sereina</a><a class="btn alt" href="#cadeau">Offrir Sereina</a></div></div>
 </section>
 <script src="/static/contact.js" defer></script>"""
     write("/offrir/", layout("Offrir Sereina à un parent : un espace pour discuter, à toute heure",
@@ -806,6 +847,7 @@ def render_landing_pages():
 <section>
 <h1>Ma mère se sent seule&nbsp;: comment l'aider&nbsp;?</h1>
 <p class="lede">Vous sentez que votre mère ou votre père s'isole, et vous ne savez pas comment vous y prendre sans le vexer ni l'inquiéter. Voici des repères simples, et ce qui peut vraiment faire la différence.</p>
+{pic("aider-parent-seul", "scene banner", eager=True)}
 <div class="article"><h2>Les signes qui doivent vous alerter</h2>
 <ul>
 <li>Elle ne parle plus de ses journées, ou répond toujours « tout va bien », sans détail.</li>
@@ -848,6 +890,7 @@ def render_landing_pages():
     body = f"""
 <section>
 <h1>Compagnon virtuel pour senior&nbsp;: ce que c'est, ce que ça apporte, ses limites</h1>
+{pic("compagnon-virtuel-senior", "scene banner", eager=True)}
 <p class="lede">Un « compagnon virtuel » est un programme informatique avec lequel on discute par écrit, à toute heure. Pour une personne âgée qui vit seule, cela peut être une présence rassurante, à condition de savoir ce que c'est, et ce que ce n'est pas.</p>
 <div class="article"><h2>À quoi ça sert concrètement</h2>
 <ul>
@@ -952,7 +995,7 @@ def load_achats():
 def render_collection(cfg):
     items = load_collection(cfg)
     def card(a):
-        return (f'<li><a href="{a["path"]}"><img src="/static/img/scenes/{cfg["img"]}-{a["image"]}.svg" alt="" width="800" height="320" loading="lazy">'
+        return (f'<li><a href="{a["path"]}"><img src="{scene_src(cfg["img"], a["image"])}" alt="" width="800" height="320" loading="lazy">'
                 f'<span class="ac-body"><em>{esc(a["kicker"])}</em><b>{esc(a["title"]).replace(" :", "&nbsp;:")}</b><span>{esc(a["description"])}</span></span></a></li>')
     for a in items:
         md = markdown.Markdown(extensions=["toc", "tables"], extension_configs={"toc": {"toc_depth": "2"}})
@@ -981,7 +1024,7 @@ def render_collection(cfg):
   <h1>{esc(a["title"]).replace(" :", "&nbsp;:")}</h1>
   <div class="meta"><span>Lecture : {reading} min</span><span>Mis à jour le {fr_date(str(a["updated"]))}</span><span>{esc(cfg["tag"])}</span>{'<span>' + str(len(srcs)) + ' sources citées</span>' if srcs else ''}</div>
 </div>
-<img class="scene achat-img" src="/static/img/scenes/{cfg["img"]}-{a["image"]}.svg" alt="" width="800" height="320" fetchpriority="high">
+<img class="scene achat-img" src="{scene_src(cfg["img"], a["image"])}" alt="" width="800" height="320" fetchpriority="high">
 {cfg["note"]}
 <article class="article">
 {keypoints_html(a.get("retenir"))}
@@ -1041,7 +1084,7 @@ def render_parler():
 <h1>Parler maintenant</h1>
 <p class="sub">Choisissez un accompagnant, écrivez dans la case, puis cliquez sur « Envoyer ». Les réponses sont rédigées par un programme d'intelligence artificielle à partir de ce que vous écrivez.</p>
 <div id="app" class="talk">
-  <div class="talk-head"><div class="with"><img class="portrait mini" id="headImg" src="/static/img/accompagnants/clara.svg" alt="" width="48" height="48">Avec <span id="headName">Clara</span><small id="headRole">Anxiété et stress</small></div>
+  <div class="talk-head"><div class="with"><img class="portrait mini" id="headImg" src="/static/img/accompagnants/clara.webp" alt="" width="48" height="48">Avec <span id="headName">Clara</span><small id="headRole">Anxiété et stress</small></div>
   <div class="tools"><span class="quota" id="quota"></span>
   <select id="guide" aria-label="Changer d'accompagnant"><option value="clara">Clara, anxiété et stress</option><option value="samuel">Samuel, sommeil et fatigue</option><option value="ines">Inès, couple et famille</option><option value="theo">Théo, épuisement au travail</option><option value="maya">Maya, deuil et séparation</option><option value="jeanne">Jeanne, solitude, retraite, âge</option></select>
   <button type="button" class="ghost" id="resetBtn">Recommencer</button></div></div>
@@ -1191,6 +1234,7 @@ def render_pages():
     body = """
 <section>
 <h1>Contact</h1>
+__PIC_contact__
 <p class="sub">Une question sur le service, les crédits, vos données ? Écrivez-nous. Nous répondons en général sous deux jours ouvrés. <b>Cette page n'est pas un service d'urgence</b> : en cas de danger, appelez le 15 ou le 3114.</p>
 <form class="form" id="contactForm">
   <div class="hp" aria-hidden="true"><label>Site web<input name="website" tabindex="-1" autocomplete="off"></label></div>
@@ -1201,13 +1245,14 @@ def render_pages():
   <p class="sub" id="contactMsg"></p>
 </form>
 </section>
-<script src="/static/contact.js" defer></script>"""
+<script src="/static/contact.js" defer></script>""".replace("__PIC_contact__", pic("contact", "scene banner", eager=True))
     write("/contact/", layout("Contact | Sereina", "Contacter l'équipe Sereina pour une question sur le service, les crédits ou vos données.", body, "/contact/", one_col=True))
 
     # À propos
     body = """
 <section>
 <h1>À propos de Sereina</h1>
+__PIC_apropos__
 <div class="run">
 <p>Sereina est né d'un constat simple : beaucoup de gens vont mal sans oser en parler, ou sans trouver quelqu'un de disponible au moment où ça pèse le plus, souvent le soir ou la nuit. Les délais pour voir un psychologue se comptent en semaines, et tout le monde n'a pas un proche à qui se confier.</p>
 <p>Nous avons donc construit un espace d'écoute qui répond tout de suite. Les accompagnants Sereina sont des programmes d'intelligence artificielle, préparés avec soin pour écouter avec respect, aider à mettre des mots sur ce qui se passe, proposer des gestes concrets issus des approches reconnues, et surtout savoir dire quand il faut une aide humaine, et laquelle.</p>
@@ -1215,7 +1260,7 @@ def render_pages():
 <p>À côté du chat, nous publions des conseils gratuits, écrits simplement, pour les adultes de 30 à 70 ans et plus qui cherchent à comprendre ce qu'ils vivent : anxiété, sommeil, épuisement au travail, couple, famille, deuil, solitude.</p>
 </div>
 <div class="cta"><a class="btn" href="/parler/">Commencer à parler</a></div>
-</section>"""
+</section>""".replace("__PIC_apropos__", pic("a-propos", "scene banner", eager=True))
     write("/a-propos/", layout("À propos de Sereina, espace d'écoute", "Pourquoi Sereina existe, ce que sont les accompagnants d'écoute, et ce que le service n'est pas.", body, "/a-propos/", one_col=True))
 
     # Confidentialité

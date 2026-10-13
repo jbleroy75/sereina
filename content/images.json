@@ -1,0 +1,254 @@
+{
+ "clara": {
+  "src": "/static/img/accompagnants/clara.webp",
+  "w": 640,
+  "h": 640,
+  "alt": "Portrait illustré de Clara, accompagnant virtuel Sereina."
+ },
+ "ines": {
+  "src": "/static/img/accompagnants/ines.webp",
+  "w": 640,
+  "h": 640,
+  "alt": "Portrait illustré de Inès, accompagnant virtuel Sereina."
+ },
+ "jeanne": {
+  "src": "/static/img/accompagnants/jeanne.webp",
+  "w": 640,
+  "h": 640,
+  "alt": "Portrait illustré de Jeanne, accompagnant virtuel Sereina."
+ },
+ "maya": {
+  "src": "/static/img/accompagnants/maya.webp",
+  "w": 640,
+  "h": 640,
+  "alt": "Portrait illustré de Maya, accompagnant virtuel Sereina."
+ },
+ "samuel": {
+  "src": "/static/img/accompagnants/samuel.webp",
+  "w": 640,
+  "h": 640,
+  "alt": "Portrait illustré de Samuel, accompagnant virtuel Sereina."
+ },
+ "theo": {
+  "src": "/static/img/accompagnants/theo.webp",
+  "w": 640,
+  "h": 640,
+  "alt": "Portrait illustré de Théo, accompagnant virtuel Sereina."
+ },
+ "accueil": {
+  "src": "/static/img/scenes/accueil.webp",
+  "w": 1000,
+  "h": 800,
+  "alt": "Illustration peinte d’une femme assise sur un canapé avec une tasse, face à la lumière du matin."
+ },
+ "achat-cadre": {
+  "src": "/static/img/scenes/achat-cadre.webp",
+  "w": 1200,
+  "h": 480,
+  "alt": "Illustration peinte d’une femme regardant des photos de famille sur un cadre numérique."
+ },
+ "achat-telephone": {
+  "src": "/static/img/scenes/achat-telephone.webp",
+  "w": 1200,
+  "h": 480,
+  "alt": "Illustration peinte d’un homme âgé en conversation sur un téléphone simple."
+ },
+ "asso-aidants": {
+  "src": "/static/img/scenes/asso-aidants.webp",
+  "w": 1200,
+  "h": 480,
+  "alt": "Illustration peinte d’une femme partageant un moment de soutien avec son père âgé."
+ },
+ "asso-benevolat": {
+  "src": "/static/img/scenes/asso-benevolat.webp",
+  "w": 1200,
+  "h": 480,
+  "alt": "Illustration peinte de trois adultes triant des livres ensemble pour une association."
+ },
+ "asso-deuil": {
+  "src": "/static/img/scenes/asso-deuil.webp",
+  "w": 1200,
+  "h": 480,
+  "alt": "Illustration peinte d’une femme écoutant avec attention une personne traversant une période de deuil."
+ },
+ "asso-solitude": {
+  "src": "/static/img/scenes/asso-solitude.webp",
+  "w": 1200,
+  "h": 480,
+  "alt": "Illustration peinte de deux seniors qui marchent ensemble dans un jardin."
+ },
+ "ensemble": {
+  "src": "/static/img/scenes/ensemble.webp",
+  "w": 1200,
+  "h": 691,
+  "alt": "Illustration peinte de deux adultes qui discutent calmement sur un banc."
+ },
+ "etape1": {
+  "src": "/static/img/scenes/etape1.webp",
+  "w": 800,
+  "h": 440,
+  "alt": "Illustration peinte d’une femme choisissant un accompagnant sur sa tablette."
+ },
+ "etape2": {
+  "src": "/static/img/scenes/etape2.webp",
+  "w": 800,
+  "h": 440,
+  "alt": "Illustration peinte d’un homme écrivant un message sur une tablette."
+ },
+ "etape3": {
+  "src": "/static/img/scenes/etape3.webp",
+  "w": 800,
+  "h": 441,
+  "alt": "Illustration peinte d’une femme avançant tranquillement sur un chemin."
+ },
+ "fin": {
+  "src": "/static/img/scenes/fin.webp",
+  "w": 1200,
+  "h": 630,
+  "alt": "Illustration peinte d’un fauteuil accueillant avec une tablette, une tasse et un carnet."
+ },
+ "a-propos": {
+  "src": "/static/img/pages/a-propos.webp",
+  "w": 1400,
+  "h": 788,
+  "alt": "Illustration peinte : À propos de Sereina."
+ },
+ "aider-parent-seul": {
+  "src": "/static/img/pages/aider-parent-seul.webp",
+  "w": 1400,
+  "h": 788,
+  "alt": "Illustration peinte : Aider un parent qui se sent seul."
+ },
+ "application-accueil": {
+  "src": "/static/img/pages/application-accueil.webp",
+  "w": 1400,
+  "h": 788,
+  "alt": "Illustration peinte : Application Sereina."
+ },
+ "compagnon-virtuel-senior": {
+  "src": "/static/img/pages/compagnon-virtuel-senior.webp",
+  "w": 1400,
+  "h": 788,
+  "alt": "Illustration peinte : Compagnon virtuel pour senior."
+ },
+ "contact": {
+  "src": "/static/img/pages/contact.webp",
+  "w": 1400,
+  "h": 788,
+  "alt": "Illustration peinte : Contact."
+ },
+ "installation-android": {
+  "src": "/static/img/pages/installation-android.webp",
+  "w": 1000,
+  "h": 550,
+  "alt": "Illustration peinte : Installation sur Android."
+ },
+ "installation-iphone": {
+  "src": "/static/img/pages/installation-iphone.webp",
+  "w": 1000,
+  "h": 550,
+  "alt": "Illustration peinte : Installation sur iPhone ou iPad."
+ },
+ "installation-ordinateur": {
+  "src": "/static/img/pages/installation-ordinateur.webp",
+  "w": 1000,
+  "h": 550,
+  "alt": "Illustration peinte : Installation sur ordinateur."
+ },
+ "offrir-accueil": {
+  "src": "/static/img/pages/offrir-accueil.webp",
+  "w": 1400,
+  "h": 788,
+  "alt": "Illustration peinte : Offrir Sereina à un parent."
+ },
+ "offrir-etape-choisir": {
+  "src": "/static/img/pages/offrir-etape-choisir.webp",
+  "w": 1400,
+  "h": 771,
+  "alt": "Illustration peinte : Choisir son accompagnant ensemble."
+ },
+ "offrir-etape-installer": {
+  "src": "/static/img/pages/offrir-etape-installer.webp",
+  "w": 1400,
+  "h": 771,
+  "alt": "Illustration peinte : Mettre Sereina à portée de main."
+ },
+ "offrir-etape-ouvrir": {
+  "src": "/static/img/pages/offrir-etape-ouvrir.webp",
+  "w": 1400,
+  "h": 771,
+  "alt": "Illustration peinte : Ouvrir le site ensemble."
+ },
+ "guide-anxiete": {
+  "src": "/static/img/guides/guide-anxiete.webp",
+  "w": 640,
+  "h": 853,
+  "alt": "Illustration peinte : Apaiser l’anxiété au quotidien."
+ },
+ "guide-deuil-solitude": {
+  "src": "/static/img/guides/guide-deuil-solitude.webp",
+  "w": 640,
+  "h": 853,
+  "alt": "Illustration peinte : Traverser le deuil et la solitude."
+ },
+ "guide-epuisement-travail": {
+  "src": "/static/img/guides/guide-epuisement-travail.webp",
+  "w": 640,
+  "h": 853,
+  "alt": "Illustration peinte : Épuisement au travail."
+ },
+ "guide-prendre-soin-de-soi": {
+  "src": "/static/img/guides/guide-prendre-soin-de-soi.webp",
+  "w": 640,
+  "h": 853,
+  "alt": "Illustration peinte : Prendre soin de soi quand tout pèse."
+ },
+ "guide-sommeil": {
+  "src": "/static/img/guides/guide-sommeil.webp",
+  "w": 640,
+  "h": 853,
+  "alt": "Illustration peinte : Retrouver le sommeil en 4 semaines."
+ },
+ "rubrique-anxiete-stress": {
+  "src": "/static/img/rubriques/rubrique-anxiete-stress.webp",
+  "w": 1000,
+  "h": 563,
+  "alt": "Illustration peinte : Anxiété et stress."
+ },
+ "rubrique-deuil": {
+  "src": "/static/img/rubriques/rubrique-deuil.webp",
+  "w": 1000,
+  "h": 563,
+  "alt": "Illustration peinte : Deuil et séparation."
+ },
+ "rubrique-famille": {
+  "src": "/static/img/rubriques/rubrique-famille.webp",
+  "w": 1000,
+  "h": 563,
+  "alt": "Illustration peinte : Famille et proches."
+ },
+ "rubrique-se-faire-aider": {
+  "src": "/static/img/rubriques/rubrique-se-faire-aider.webp",
+  "w": 1000,
+  "h": 563,
+  "alt": "Illustration peinte : Se faire aider."
+ },
+ "rubrique-solitude-retraite": {
+  "src": "/static/img/rubriques/rubrique-solitude-retraite.webp",
+  "w": 1000,
+  "h": 563,
+  "alt": "Illustration peinte : Solitude, retraite et âge."
+ },
+ "rubrique-sommeil": {
+  "src": "/static/img/rubriques/rubrique-sommeil.webp",
+  "w": 1000,
+  "h": 563,
+  "alt": "Illustration peinte : Sommeil et fatigue."
+ },
+ "rubrique-travail-burn-out": {
+  "src": "/static/img/rubriques/rubrique-travail-burn-out.webp",
+  "w": 1000,
+  "h": 563,
+  "alt": "Illustration peinte : Travail et épuisement."
+ }
+}

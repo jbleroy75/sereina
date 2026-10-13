@@ -694,3 +694,30 @@ a,button,.btn,.ghost{transition:color .2s,background-color .2s,border-color .2s,
 .article blockquote.callout,.article blockquote.callout *{overflow-wrap:anywhere;min-width:0}
 .article blockquote.callout ul,.article blockquote.callout ol{padding-left:1.2em;margin-left:0}
 @media (max-width:420px){.article blockquote.callout{padding:16px 14px 14px 16px}}
+
+/* Illustrations peintes : bannières de page, rubriques, couvertures de guides, étapes d'installation */
+.scene.banner{margin:18px 0 28px;border-radius:24px;aspect-ratio:16/9;object-fit:cover}
+.scene.illu{margin:4px 0 20px;max-width:560px;border-radius:18px}
+.themes.with-img{grid-template-columns:repeat(2,minmax(0,1fr))}
+.themes li>a.ph{display:block;padding:0}
+.themes li>a.ph img.rub{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:cover;border-radius:var(--radius) var(--radius) 0 0}
+.themes.with-img li{overflow:hidden}
+@media (max-width:700px){.themes.with-img{grid-template-columns:1fr}.scene.banner{border-radius:16px;margin-bottom:22px}}
+.nlcover.has-img{position:relative;overflow:hidden;padding:0;justify-content:flex-end;background:#26332f}
+.nlcover.has-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.nlcover.has-img::after{content:"";position:absolute;inset:0;background:linear-gradient(to bottom,rgba(20,30,28,0) 45%,rgba(20,30,28,.86))}
+.nlcover.has-img span,.nlcover.has-img b{position:relative;z-index:1;color:#fff;padding-inline:12px}
+.nlcover.has-img b{padding-bottom:12px;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+.nlcover.has-img span{opacity:1;padding-bottom:2px}
+.gcovers{list-style:none;margin:24px 0;padding:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:16px}
+.gcovers a{display:block;text-decoration:none;color:inherit}
+.gcovers .nlcover{max-width:none}
+.gcovers a:hover .nlcover{transform:translateY(-4px)}
+@media (max-width:900px){.gcovers{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:560px){.gcovers{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* Couverture illustrée : le titre est déjà à côté (liste des guides, encadré d'article) ; il n'est écrit sur l'image que dans la rangée de l'accueil */
+.nlcover.has-img span,.nlcover.has-img b,.nlcover.has-img::after{display:none}
+.gcovers .nlcover.has-img b,.gcovers .nlcover.has-img::after{display:block}
+.guides .guide{grid-template-columns:190px minmax(0,1fr)}
+.nlbox:has(.has-img){grid-template-columns:150px minmax(0,1fr)}
+@media (max-width:620px){.nlbox:has(.has-img),.guides .guide{grid-template-columns:1fr}.nlcover.has-img{max-width:170px}}

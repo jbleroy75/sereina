@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 220" role="img" aria-label="Un chemin qui monte doucement vers le soleil levant"><rect width="400" height="220" rx="22" fill="#fdecc8"/>
-<circle cx="290" cy="92" r="58" fill="#ffe3a0" opacity=".7"/><circle cx="290" cy="92" r="36" fill="#ffd27a"/>
-<path d="M0 150c80-40 170-50 270-20s100 14 130-4v94H0z" fill="#8ec7b8"/>
-<path d="M0 180c100-30 190-20 260 0s100 8 140-6v46H0z" fill="#3b8176"/>
-<path d="M40 214c80-30 130-26 170-52s50-48 80-58" fill="none" stroke="#fbf8f2" stroke-width="16" stroke-linecap="round"/>
-<g fill="#1d5a55"><circle cx="150" cy="170" r="9"/><rect x="143" y="177" width="14" height="22" rx="6"/></g>
-<rect x="293" y="62" width="4" height="40" fill="#6b4a33"/><path d="M297 62l26 9-26 9z" fill="#d9825b"/>
-</svg>
