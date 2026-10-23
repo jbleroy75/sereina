@@ -12,7 +12,7 @@ ARG PACKS="petit:20:490:Petit pack,moyen:60:1290:Pack confort,grand:150:2490:Gra
 ENV PACKS=$PACKS
 RUN python3 build.py --site-url $SITE_URL && python3 build_guides.py --site-url $SITE_URL --out /src/private/guides
 
-FROM node:20-slim
+FROM node:24-slim
 WORKDIR /app/server
 COPY server/package*.json ./
 RUN npm install --omit=dev
