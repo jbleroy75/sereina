@@ -12,10 +12,17 @@ ARG PACKS="petit:20:490:Petit pack,moyen:60:1290:Pack confort,grand:150:2490:Gra
 ENV PACKS=$PACKS
 RUN python3 build.py --site-url $SITE_URL && python3 build_guides.py --site-url $SITE_URL --out /src/private/guides
 
-FROM node:24-slim
+# better-sqlite3 ≥ 13 n'a plus de binaire précompilé : il se compile (node-gyp → python3, make, g++). Les outils
+# restent dans cette étape ; l'image finale ne reçoit que node_modules.
+FROM node:24-slim AS deps
+RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ && rm -rf /var/lib/apt/lists/*
 WORKDIR /app/server
 COPY server/package*.json ./
-RUN npm install --omit=dev
+RUN npm ci --omit=dev
+
+FROM node:24-slim
+WORKDIR /app/server
+COPY --from=deps /app/server/node_modules ./node_modules
 COPY server ./
 COPY --from=build /src/dist /app/dist
 COPY --from=build /src/private/guides /app/private/guides
