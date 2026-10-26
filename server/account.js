@@ -3,14 +3,12 @@
 // S'il existe déjà un compte pour cet e-mail (autre appareil), l'espace anonyme y est fusionné : crédits,
 // conversations, achats. Les crédits ne sont donc plus liés au navigateur.
 import crypto from "node:crypto";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { disposableDomains } from "#files";
 import { db, q, now } from "./db.js";
 import { hmac } from "./security/secret.js";
 import { queueEmail } from "./mailqueue.js";
 
-const DISPOSABLE = new Set(JSON.parse(fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), "security", "disposable-domains.json"), "utf8")));
+const DISPOSABLE = new Set(disposableDomains());
 const CODE_TTL_MIN = 10, MAX_ATTEMPTS = 5;
 
 db.exec(`CREATE TABLE IF NOT EXISTS login_codes (
