@@ -1,10 +1,8 @@
-import Database from "better-sqlite3";
-import path from "node:path";
-import fs from "node:fs";
+// `#sqlite` : better-sqlite3 sous Node, stockage SQLite du Durable Object sous Cloudflare (platform/do-sqlite.js).
+import Database from "#sqlite";
+import { dbFile } from "#files";
 
-const file = process.env.DB_PATH || path.join(process.cwd(), "data", "sereina.db");
-fs.mkdirSync(path.dirname(file), { recursive: true });
-export const db = new Database(file);
+export const db = new Database(dbFile());
 db.pragma("journal_mode = WAL");
 
 db.exec(`

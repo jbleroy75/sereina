@@ -2,8 +2,7 @@
 // Double consentement : l'inscription est « en attente » jusqu'au clic sur le lien de confirmation reçu par e-mail ;
 // le guide est alors téléchargeable via un lien signé (pas d'URL publique devinable).
 import crypto from "node:crypto";
-import fs from "node:fs";
-import path from "node:path";
+import { guidesIndex, guidePdfExists, guidePdf } from "#files";
 import { db, now } from "./db.js";
 import { queueEmail } from "./mailqueue.js";
 import { hmac, sign, checkSig } from "./security/secret.js";
@@ -11,7 +10,6 @@ import { normalizeEmail, isDisposable, emailHash } from "./account.js";
 import { unsubLink } from "./lifecycle.js";
 
 const SITE_URL = () => (process.env.SITE_URL || "http://localhost:3000").replace(/\/$/, "");
-export const GUIDES_DIR = process.env.GUIDES_DIR || path.join(process.cwd(), "..", "private", "guides");
 
 db.exec(`CREATE TABLE IF NOT EXISTS newsletter (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -47,9 +45,9 @@ const qq = {
 };
 
 export function listGuideFiles() {
-  try { return JSON.parse(fs.readFileSync(path.join(GUIDES_DIR, "guides.json"), "utf8")); } catch { return []; }
+  return guidesIndex();
 }
-export const guideExists = slug => /^[a-z0-9-]+$/.test(slug) && fs.existsSync(path.join(GUIDES_DIR, `${slug}.pdf`));
+export const guideExists = slug => /^[a-z0-9-]+$/.test(slug) && guidePdfExists(slug);
 export const downloadUrl = (subId, slug) => `${SITE_URL()}/api/guides/${slug}.pdf?id=${subId}&s=${sign("guide", `${subId}:${slug}`)}`;
 
 /** Inscription. Retourne {ok, already} ou {error}. */
@@ -94,12 +92,12 @@ function sendGuideEmail(sub, slug) {
     text: `Bonjour,\n\nMerci pour votre inscription. Voici votre guide gratuit${meta ? ` « ${meta.titre} »` : ""} :\n\n${downloadUrl(sub.id, slug)}\n\nVous pouvez l'imprimer et le relire à votre rythme. Les autres guides sont ici : ${SITE_URL()}/guides/\n\n—\nSereina, espace d'écoute. En cas d'urgence : 15 ou 3114.\nSe désinscrire : ${unsubLink("n", sub.id)}` });
 }
 
-/** Vérifie un lien de téléchargement. Retourne le chemin du PDF ou null. */
+/** Vérifie un lien de téléchargement. Retourne le contenu du PDF (Buffer) ou null. */
 export function guideFileFor(slug, id, sig) {
   if (!guideExists(slug) || !checkSig("guide", `${id}:${slug}`, sig)) return null;
   const sub = qq.byId.get(Number(id));
   if (!sub || sub.status === "unsubscribed") return null;
-  return path.join(GUIDES_DIR, `${slug}.pdf`);
+  return guidePdf(slug);
 }
 
 export function unsubscribeNewsletter(id) { qq.unsub.run(now(), Number(id)); }

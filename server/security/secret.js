@@ -2,20 +2,12 @@
 // créé une fois et conservé dans le dossier de données. Sans cela, un redémarrage changerait les
 // empreintes d'e-mail, les liens de désinscription et les liens de téléchargement déjà envoyés.
 import crypto from "node:crypto";
-import fs from "node:fs";
-import path from "node:path";
+import { storedSecret } from "#files";
 
 function loadSecret() {
   const env = process.env.APP_SECRET || process.env.COOKIE_SECRET;
   if (env && env.length >= 16) return env;
-  const dir = path.dirname(process.env.DB_PATH || path.join(process.cwd(), "data", "sereina.db"));
-  const file = path.join(dir, ".secret");
-  try { return fs.readFileSync(file, "utf8").trim(); } catch {}
-  fs.mkdirSync(dir, { recursive: true });
-  const s = crypto.randomBytes(32).toString("hex");
-  fs.writeFileSync(file, s, { mode: 0o600 });
-  console.warn(`[secret] APP_SECRET absent : secret généré et conservé dans ${file}`);
-  return s;
+  return storedSecret(() => crypto.randomBytes(32).toString("hex"));
 }
 
 export const SECRET = loadSecret();

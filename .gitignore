@@ -19,3 +19,6 @@ __pycache__/
 # Guides PDF générés (servis seulement par lien signé) et état SEO local
 private/
 .seo-state.json
+server/platform/embedded.gen.js
+.wrangler/
+.dev.vars
