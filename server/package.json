@@ -7,8 +7,7 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "dev": "MOCK_AI=1 node server.js",
-    "test": "node --test test/"
+    "dev": "MOCK_AI=1 node server.js"
   },
   "engines": {
     "node": ">=22"

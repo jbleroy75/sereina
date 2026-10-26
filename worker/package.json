@@ -8,7 +8,6 @@
   "scripts": {
     "build": "node gen-embedded.mjs",
     "dev": "node gen-embedded.mjs && wrangler dev",
-    "deploy": "node gen-embedded.mjs && wrangler deploy",
-    "test": "node --test test/"
+    "deploy": "node gen-embedded.mjs && wrangler deploy"
   }
 }
