@@ -7,7 +7,8 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "dev": "MOCK_AI=1 node server.js"
+    "dev": "MOCK_AI=1 node server.js",
+    "test": "node --test test/"
   },
   "engines": {
     "node": ">=22"
@@ -20,5 +21,19 @@
     "nodemailer": "^10.2.1",
     "qrcode": "^1.5.4",
     "stripe": "^23.0.1"
+  },
+  "imports": {
+    "#sqlite": {
+      "workerd": "./platform/do-sqlite.js",
+      "default": "better-sqlite3"
+    },
+    "#files": {
+      "workerd": "./platform/files-worker.js",
+      "default": "./platform/files-node.js"
+    },
+    "#mailer": {
+      "workerd": "./platform/mailer-http.js",
+      "default": "./platform/mailer-node.js"
+    }
   }
 }

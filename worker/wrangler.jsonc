@@ -1,0 +1,40 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "sereina",
+  "main": "index.js",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "preview_urls": false,
+  // Bascule du domaine : décommenter au moment T (étapes dans la description de la PR « Cloudflare Workers »).
+  // Le DNS reste aujourd'hui sur Coolify.
+  // "routes": [{ "pattern": "serena.jbleroy.fr", "custom_domain": true }],
+
+  // Site statique généré par build.py ; /api/* et /admin* passent d'abord par le Worker (Express dans le Durable Object).
+  "assets": {
+    "directory": "../dist",
+    "binding": "ASSETS",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page",
+    "run_worker_first": ["/api/*", "/admin", "/admin/*", "/__sereina/*"]
+  },
+
+  // Une seule instance (« main ») : l'équivalent du process Node unique, avec sa base SQLite.
+  "durable_objects": { "bindings": [{ "name": "SEREINA", "class_name": "Sereina" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Sereina"] }],
+
+  // Guides PDF privés embarqués dans le bundle (servis seulement par lien signé).
+  "rules": [{ "type": "Data", "globs": ["**/*.pdf"], "fallthrough": true }],
+
+  "observability": { "enabled": true },
+
+  // Valeurs non secrètes. Les secrets (APP_SECRET, COOKIE_SECRET, TOTP_ENCRYPTION_KEY, HEALTH_SECRET, ADMIN_EMAIL,
+  // ADMIN_PASSWORD, CONTACT_EMAIL, ALERT_EMAIL, et plus tard ANTHROPIC_API_KEY, STRIPE_*, RESEND_API_KEY, MAIL_FROM,
+  // IMPORT_TOKEN) se posent avec `wrangler secret put`.
+  "vars": {
+    "SITE_URL": "https://sereina.cf-security.workers.dev",
+    "MODEL_CHAT": "claude-sonnet-5-5",
+    "MODEL_RISK": "claude-haiku-5-5",
+    "MOCK_AI": "1"
+  }
+}

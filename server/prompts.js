@@ -2,12 +2,9 @@
 // Source par défaut : server/prompts/_commun.md (règles communes) et server/prompts/<cle>.md (un fichier par accompagnant).
 // Le back-office peut remplacer le texte d'un accompagnant ou les règles communes, et ajouter des « indications »
 // libres (consignes du moment) ; ces modifications sont stockées en base, historisées, et priment sur les fichiers.
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { promptKeys, readPrompt } from "#files";
 import { db, now } from "./db.js";
 
-const DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "prompts");
 export const COMMON_KEY = "_commun";
 
 db.exec(`CREATE TABLE IF NOT EXISTS guide_prompts (
@@ -36,7 +33,8 @@ const q = {
 };
 
 function parseFile(key) {
-  const raw = fs.readFileSync(path.join(DIR, `${key}.md`), "utf8");
+  const raw = readPrompt(key);
+  if (raw == null) throw new Error(`Prompt introuvable : ${key}`);
   const m = raw.match(/^---\n([\s\S]*?)\n---\n/);
   const meta = {};
   if (m) for (const line of m[1].split("\n")) { const i = line.indexOf(":"); if (i > 0) meta[line.slice(0, i).trim()] = line.slice(i + 1).trim(); }
@@ -45,10 +43,10 @@ function parseFile(key) {
 
 /** Liste des accompagnants, lue dans le dossier prompts/ : ajouter un fichier ajoute un accompagnant côté serveur. */
 export function listGuides() {
-  return fs.readdirSync(DIR).filter(f => f.endsWith(".md") && !f.startsWith("_")).map(f => f.slice(0, -3)).sort()
+  return promptKeys().filter(k => !k.startsWith("_")).sort()
     .map(key => { const { meta } = parseFile(key); return { key, name: meta.nom || key, spec: meta.specialite || "" }; });
 }
-export const guideExists = key => fs.existsSync(path.join(DIR, `${key}.md`)) && !key.startsWith("_");
+export const guideExists = key => readPrompt(key) != null && !key.startsWith("_");
 
 /** Texte effectif (base si modifié, sinon fichier) + indications. */
 export function getPrompt(key) {

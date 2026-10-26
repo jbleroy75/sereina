@@ -1,0 +1,14 @@
+{
+  "name": "sereina-worker",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "wrangler": "^4.152.0"
+  },
+  "scripts": {
+    "build": "node gen-embedded.mjs",
+    "dev": "node gen-embedded.mjs && wrangler dev",
+    "deploy": "node gen-embedded.mjs && wrangler deploy",
+    "test": "node --test test/"
+  }
+}

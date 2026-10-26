@@ -1,7 +1,7 @@
 // File d'attente d'e-mails avec reprise, reprise de renta-immo (lib/infra/email-queue.ts) :
 // un e-mail est d'abord écrit en base, puis envoyé par un processeur ; en cas d'échec,
 // nouvel essai après 1 min, 5 min, 30 min, puis statut FAILED visible dans /api/health et le back-office.
-import nodemailer from "nodemailer";
+import { createTransport, transportConfigured } from "#mailer";
 import { db, now } from "./db.js";
 
 const RETRY_DELAYS_MS = [60_000, 300_000, 1_800_000];
@@ -32,18 +32,15 @@ const q = {
   retry: db.prepare("UPDATE email_queue SET attempts = attempts + 1, next_retry_at = ?, last_error = ? WHERE id = ?"),
   failed: db.prepare("UPDATE email_queue SET status = 'FAILED', attempts = attempts + 1, last_error = ? WHERE id = ?"),
   stats: db.prepare("SELECT status, COUNT(*) AS n FROM email_queue GROUP BY status"),
+  nextDue: db.prepare("SELECT MIN(next_retry_at) AS next_retry_at FROM email_queue WHERE status = 'PENDING'"),
   purge: db.prepare("DELETE FROM email_queue WHERE status = 'SENT' AND sent_at < datetime('now', '-30 day')"),
 };
 
-export const emailConfigured = () => !!(process.env.SMTP_HOST && (process.env.SMTP_FROM || process.env.SMTP_USER));
+export const emailConfigured = () => transportConfigured();
 
 let transport = null;
 function getTransport() {
-  if (!transport) transport = nodemailer.createTransport({
-    host: process.env.SMTP_HOST, port: Number(process.env.SMTP_PORT || 587), secure: process.env.SMTP_SECURE === "1",
-    auth: process.env.SMTP_USER ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } : undefined,
-    connectionTimeout: 10_000, socketTimeout: 20_000,
-  });
+  if (!transport) transport = createTransport();
   return transport;
 }
 
@@ -72,7 +69,7 @@ export async function processQueue(batch = 50) {
   try {
     for (const m of q.due.all(now(), batch)) {
       try {
-        await getTransport().sendMail({ from: process.env.SMTP_FROM || process.env.SMTP_USER, to: m.recipient, subject: m.subject, text: m.body, replyTo: m.reply_to || undefined, priority: m.priority === "high" ? "high" : "normal", headers: m.headers ? JSON.parse(m.headers) : undefined });
+        await getTransport().sendMail({ from: process.env.SMTP_FROM || process.env.MAIL_FROM || process.env.SMTP_USER, to: m.recipient, subject: m.subject, text: m.body, replyTo: m.reply_to || undefined, priority: m.priority === "high" ? "high" : "normal", headers: m.headers ? JSON.parse(m.headers) : undefined });
         q.sent.run(now(), m.id); result.sent++;
       } catch (e) {
         const err = String(e.message || e).slice(0, 300);
@@ -90,7 +87,8 @@ export function queueStats() {
   return s;
 }
 
-export function startQueueProcessor() {
-  setInterval(() => processQueue().catch(e => console.error("mailqueue", e.message)), 60_000);
-  setInterval(() => { try { q.purge.run(); } catch {} }, 6 * 3600 * 1000);
-}
+/** Nettoyage des e-mails envoyés depuis plus de 30 jours (tâche des 6 heures). */
+export function purgeQueue() { try { q.purge.run(); } catch {} }
+
+/** Prochain e-mail en attente (pour programmer l'alarme du Durable Object), ou null. */
+export function nextDueAt() { return emailConfigured() ? q.nextDue.get()?.next_retry_at || null : null; }
