@@ -2,7 +2,7 @@
 // Logique reprise de renta-immo (lib/auth/auth.ts, lib/security/audit.ts, lib/admin/owner-access.ts).
 import crypto from "node:crypto";
 import { db, now } from "../db.js";
-import { hashPassword, verifyPassword, dummyVerify, sha256, randomToken } from "./password.js";
+import { hashPassword, verifyPassword, needsRehash, dummyVerify, sha256, randomToken } from "./password.js";
 import { decryptSecret, verifyTOTPCode, hashRecoveryCode } from "./totp.js";
 import { RateLimiter, clientIp } from "./ratelimit.js";
 
@@ -21,6 +21,7 @@ const q = {
   insert: db.prepare("INSERT INTO admins (id, email, name, password_hash, role, must_change_password, created_at, password_changed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"),
   fail: db.prepare("UPDATE admins SET failed_attempts = ?, lockout_count = ?, locked_until = ? WHERE id = ?"),
   success: db.prepare("UPDATE admins SET failed_attempts = 0, locked_until = NULL, last_login_at = ? WHERE id = ?"),
+  rehash: db.prepare("UPDATE admins SET password_hash = ? WHERE id = ?"),
   setPassword: db.prepare("UPDATE admins SET password_hash = ?, password_changed_at = ?, must_change_password = 0 WHERE id = ?"),
   newSession: db.prepare("INSERT INTO admin_sessions (token_hash, admin_id, csrf, created_at, expires_at, last_seen, ip, user_agent, pending_2fa) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"),
   session: db.prepare("SELECT s.*, a.role, a.email, a.name, a.active, a.must_change_password, a.totp_enabled, a.password_changed_at FROM admin_sessions s JOIN admins a ON a.id = s.admin_id WHERE s.token_hash = ?"),
@@ -76,6 +77,8 @@ export function login(email, password, req) {
     return { ok: false, reason: "Identifiants incorrects." };
   }
   q.success.run(now(), a.id);
+  // Hash d'une autre plateforme (Node ↔ Cloudflare Workers) : refait au nombre d'itérations local, mot de passe inchangé.
+  if (needsRehash(a.password_hash)) q.rehash.run(hashPassword(String(password)), a.id);
   return { ok: true, admin: a };
 }
 
