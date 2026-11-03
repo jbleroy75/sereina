@@ -1,6 +1,5 @@
 # Sereina sur Cloudflare Workers : construit le site, lance les tests d'API (serveur Node ET Worker local),
-# puis déploie le Worker « sereina » sur workers.dev (push sur main ou lancement manuel).
-# La production reste sur Coolify tant que la route de domaine est commentée dans worker/wrangler.jsonc.
+# puis déploie le Worker « sereina » (production : serena.jbleroy.fr) sur push vers main ou lancement manuel.
 name: Deploy Cloudflare
 
 on:
@@ -17,7 +16,7 @@ permissions:
   contents: read
 
 env:
-  SITE_URL: https://sereina.cf-security.workers.dev
+  SITE_URL: https://serena.jbleroy.fr
   CLOUDFLARE_ACCOUNT_ID: 8c94210e52e29b4d4ed4c4f743d65431
 
 jobs:
@@ -51,7 +50,7 @@ jobs:
       - name: Tests d'API (Worker local, wrangler dev)
         run: npm run test:worker
 
-      - name: Déployer sur workers.dev
+      - name: Déployer (serena.jbleroy.fr)
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         working-directory: worker
         env:
